@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { AppHeader } from "@/components/layout/app-header";
 import { ShoppingListItem } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
 
 interface ShoppingClientProps {
   userId: string;
@@ -31,11 +30,10 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
       .from("shopping_list_items")
       .update({ checked: !item.checked })
       .eq("id", item.id);
-
     if (error) { toast.error("更新に失敗しました"); return; }
 
     if (!item.checked) {
-      const addToStock = confirm(`「${item.name}」をストックに追加しますか？`);
+      const addToStock = confirm(`「${item.name}」を食材庫に追加しますか？`);
       if (addToStock) {
         const itemName = item.name.replace(/\s+\S+$/, "").trim();
         await supabase.schema("cookgo").from("pantry_items").upsert({
@@ -43,10 +41,9 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
           name: itemName,
           in_stock: true,
         }, { onConflict: "user_id,name" });
-        toast.success(`${itemName}をストックに追加しました`);
+        toast.success(`${itemName}を食材庫に追加しました`);
       }
     }
-
     setItems(items.map(i => i.id === item.id ? { ...i, checked: !i.checked } : i));
   };
 
@@ -58,8 +55,7 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
 
   const clearChecked = async () => {
     const ids = checked.map(i => i.id);
-    const { error } = await supabase.schema("cookgo").from("shopping_list_items")
-      .delete().in("id", ids);
+    const { error } = await supabase.schema("cookgo").from("shopping_list_items").delete().in("id", ids);
     if (error) { toast.error("削除に失敗しました"); return; }
     setItems(unchecked);
     toast.success(`${ids.length}件を削除しました`);
@@ -84,7 +80,7 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
     <div className="flex flex-col">
       <AppHeader title="買い物リスト" />
 
-      <div className="px-4 pt-4 space-y-4">
+      <div className="px-4 md:px-8 pt-4 space-y-4">
         <div className="flex gap-2">
           <Input
             placeholder="アイテムを追加..."
@@ -100,61 +96,53 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
 
         {items.length === 0 ? (
           <div className="text-center py-16 space-y-3">
-            <ShoppingBag className="w-12 h-12 text-muted-foreground mx-auto" />
-            <p className="font-medium text-foreground">買い物リストは空です</p>
+            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+              <ShoppingBag className="w-8 h-8 text-muted-foreground" strokeWidth={1.5} />
+            </div>
+            <p className="font-semibold text-foreground">買い物リストは空です</p>
             <p className="text-sm text-muted-foreground">
               レシピページから買い物リストを生成するか、手動で追加してください
             </p>
           </div>
         ) : (
-          <>
+          <div className="space-y-5">
             {unchecked.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                  未購入 ({unchecked.length})
-                </p>
-                {unchecked.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3">
-                    <Checkbox
-                      checked={false}
-                      onCheckedChange={() => toggleItem(item)}
-                      className="rounded-full"
-                    />
-                    <span className="flex-1 text-sm">{item.name}</span>
-                    <button onClick={() => deleteItem(item.id)} className="p-1 hover:bg-muted rounded-lg">
-                      <Trash2 className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                  </div>
-                ))}
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">未購入 ({unchecked.length})</p>
+                <div className="md:grid md:grid-cols-2 md:gap-2 space-y-1.5 md:space-y-0">
+                  {unchecked.map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3">
+                      <Checkbox checked={false} onCheckedChange={() => toggleItem(item)} className="rounded-full" />
+                      <span className="flex-1 text-sm font-medium">{item.name}</span>
+                      <button onClick={() => deleteItem(item.id)} className="p-1 hover:bg-muted rounded-lg">
+                        <Trash2 className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
             {checked.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                    購入済み ({checked.length})
-                  </p>
-                  <button onClick={clearChecked} className="text-xs text-destructive">
-                    クリア
-                  </button>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">購入済み ({checked.length})</p>
+                  <button onClick={clearChecked} className="text-xs text-destructive font-medium">クリア</button>
                 </div>
-                {checked.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 bg-muted border border-border rounded-xl px-4 py-3 opacity-60">
-                    <Checkbox
-                      checked={true}
-                      onCheckedChange={() => toggleItem(item)}
-                      className="rounded-full"
-                    />
-                    <span className="flex-1 text-sm line-through text-muted-foreground">{item.name}</span>
-                    <button onClick={() => deleteItem(item.id)} className="p-1 hover:bg-background rounded-lg">
-                      <Trash2 className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                  </div>
-                ))}
+                <div className="md:grid md:grid-cols-2 md:gap-2 space-y-1.5 md:space-y-0">
+                  {checked.map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 bg-muted border border-border rounded-xl px-4 py-3 opacity-60">
+                      <Checkbox checked={true} onCheckedChange={() => toggleItem(item)} className="rounded-full" />
+                      <span className="flex-1 text-sm line-through text-muted-foreground">{item.name}</span>
+                      <button onClick={() => deleteItem(item.id)} className="p-1 hover:bg-background rounded-lg">
+                        <Trash2 className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>

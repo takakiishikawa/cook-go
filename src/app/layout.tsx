@@ -1,23 +1,38 @@
-import type { Metadata } from "next";
-import { DM_Sans, DM_Serif_Display } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Noto_Sans_JP } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
+const notoSansJP = Noto_Sans_JP({
+  variable: "--font-noto-sans-jp",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "700"],
+  display: "swap",
 });
 
-const dmSerif = DM_Serif_Display({
-  variable: "--font-dm-serif",
-  subsets: ["latin"],
-  weight: "400",
-});
+export const viewport: Viewport = {
+  themeColor: "#2D7A4F",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
-  title: "CookGo — タンパク質を制す者が、身体を制す",
+  title: "CookGo",
   description: "撮るだけ・選ぶだけで、タンパク質の水位が見えて、料理のレパートリーが増えていく。",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "CookGo",
+  },
+  formatDetection: { telephone: false },
+  openGraph: {
+    type: "website",
+    title: "CookGo",
+    description: "撮るだけ・選ぶだけで、タンパク質の水位が見えて、料理のレパートリーが増えていく。",
+  },
 };
 
 export default function RootLayout({
@@ -28,9 +43,12 @@ export default function RootLayout({
   return (
     <html
       lang="ja"
-      className={`${dmSans.variable} ${dmSerif.variable} h-full antialiased`}
+      className={`${notoSansJP.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background">
+      <head>
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+      </head>
+      <body className="min-h-full flex flex-col bg-background font-sans text-base">
         {children}
         <Toaster position="top-center" richColors />
       </body>

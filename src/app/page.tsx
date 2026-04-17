@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Camera, ChartBar, Sparkles, Leaf } from "lucide-react";
 
 export default function LoginPage() {
   const handleGoogleLogin = async () => {
@@ -20,9 +21,9 @@ export default function LoginPage() {
       <div className="w-full max-w-sm flex flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-3">
           <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center shadow-lg">
-            <span className="text-4xl">🍳</span>
+            <Leaf className="w-10 h-10 text-white" strokeWidth={1.5} />
           </div>
-          <h1 className="font-heading text-4xl text-foreground tracking-tight">CookGo</h1>
+          <h1 className="text-4xl font-bold text-foreground tracking-tight">CookGo</h1>
           <p className="text-muted-foreground text-center text-sm leading-relaxed">
             撮るだけ・選ぶだけで、<br />
             タンパク質の水位が見えて、<br />
@@ -31,25 +32,31 @@ export default function LoginPage() {
         </div>
 
         <div className="w-full space-y-4">
-          <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">📸</span>
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Camera className="w-4 h-4 text-primary" />
+              </div>
               <div>
-                <p className="text-sm font-medium">写真を撮るだけ</p>
+                <p className="text-sm font-semibold">写真を撮るだけ</p>
                 <p className="text-xs text-muted-foreground">AIが自動でタンパク質を推定</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-2xl">📊</span>
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <ChartBar className="w-4 h-4 text-primary" />
+              </div>
               <div>
-                <p className="text-sm font-medium">タンパク質ゲージ</p>
+                <p className="text-sm font-semibold">タンパク質ゲージ</p>
                 <p className="text-xs text-muted-foreground">今日の達成状況をひと目で確認</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-2xl">🤖</span>
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-4 h-4 text-primary" />
+              </div>
               <div>
-                <p className="text-sm font-medium">AIレシピ提案</p>
+                <p className="text-sm font-semibold">AIレシピ提案</p>
                 <p className="text-xs text-muted-foreground">手持ち食材でミールプレップ</p>
               </div>
             </div>

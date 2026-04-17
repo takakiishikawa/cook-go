@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, RotateCcw, Clock, Plus, Trash2, Edit2, Check } from "lucide-react";
+import { Camera, Plus, Trash2, Edit2, RefreshCw, CalendarRange } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,17 +40,23 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
   const [saving, setSaving] = useState(false);
   const [bulkDays, setBulkDays] = useState(5);
 
+  const getCurrentMealType = (): MealType => {
+    const h = new Date().getHours();
+    if (h < 10) return "breakfast";
+    if (h < 14) return "lunch";
+    if (h < 20) return "dinner";
+    return "snack";
+  };
+
   const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setAnalyzing(true);
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const base64 = (ev.target?.result as string).split(",")[1];
       const objectUrl = ev.target?.result as string;
       setPendingImageUrl(objectUrl);
-
       try {
         const res = await fetch("/api/meals/analyze", {
           method: "POST",
@@ -60,7 +66,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         setPendingResult({ ...data, meal_type: data.meal_type ?? getCurrentMealType() });
-      } catch (err) {
+      } catch {
         toast.error("画像解析に失敗しました");
         setPendingImageUrl(null);
       } finally {
@@ -68,14 +74,6 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
       }
     };
     reader.readAsDataURL(file);
-  };
-
-  const getCurrentMealType = (): MealType => {
-    const h = new Date().getHours();
-    if (h < 10) return "breakfast";
-    if (h < 14) return "lunch";
-    if (h < 20) return "dinner";
-    return "snack";
   };
 
   const saveMeal = async () => {
@@ -94,16 +92,12 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
       })
       .select()
       .single();
-
     setSaving(false);
-    if (error) {
-      toast.error("保存に失敗しました");
-      return;
-    }
+    if (error) { toast.error("保存に失敗しました"); return; }
     setTodayMeals([data as MealLog, ...todayMeals]);
     setPendingResult(null);
     setPendingImageUrl(null);
-    toast.success("記録しました！");
+    toast.success("記録しました");
     router.refresh();
   };
 
@@ -122,13 +116,9 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
       })
       .select()
       .single();
-
-    if (error) {
-      toast.error("登録に失敗しました");
-      return;
-    }
+    if (error) { toast.error("登録に失敗しました"); return; }
     setTodayMeals([data as MealLog, ...todayMeals]);
-    toast.success("今日の食事に追加しました！");
+    toast.success("今日の食事に追加しました");
     router.refresh();
   };
 
@@ -141,7 +131,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
 
   const bulkRegister = async (recurring: RecurringMeal) => {
     const today = new Date();
-    const inserts = Array.from({ length: bulkDays }, (_, i) => {
+    const inserts = Array.from({ length: bulkDays }, (_: unknown, i: number) => {
       const d = new Date(today);
       d.setDate(d.getDate() + i);
       const dateStr = d.toISOString().split("T")[0];
@@ -155,10 +145,9 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
         logged_at: `${dateStr}T12:00:00`,
       };
     });
-
     const { error } = await supabase.schema("cookgo").from("meal_logs").insert(inserts);
     if (error) { toast.error("一括登録に失敗しました"); return; }
-    toast.success(`${bulkDays}日分を登録しました！`);
+    toast.success(`${bulkDays}日分を登録しました`);
     router.refresh();
   };
 
@@ -168,207 +157,201 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
     <div className="flex flex-col">
       <AppHeader title="食事記録" />
 
-      <div className="px-4 pt-4 pb-2">
+      <div className="px-4 md:px-8 pt-4 pb-2">
         <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-between">
-          <span className="text-sm font-medium text-foreground">今日の合計タンパク質</span>
-          <span className="font-heading text-2xl text-primary">{Math.round(totalProtein)}g</span>
+          <span className="text-sm font-semibold text-foreground">今日の合計タンパク質</span>
+          <span className="text-2xl font-bold text-primary">{Math.round(totalProtein)}g</span>
         </div>
       </div>
 
-      <Tabs defaultValue="camera" className="px-4">
-        <TabsList className="w-full mt-3 rounded-xl">
-          <TabsTrigger value="camera" className="flex-1 rounded-lg">📸 写真</TabsTrigger>
-          <TabsTrigger value="history" className="flex-1 rounded-lg">🔄 履歴</TabsTrigger>
-          <TabsTrigger value="bulk" className="flex-1 rounded-lg">📦 まとめて</TabsTrigger>
-        </TabsList>
+      <div className="px-4 md:px-8">
+        <Tabs defaultValue="camera" className="mt-3">
+          <TabsList className="w-full rounded-xl">
+            <TabsTrigger value="camera" className="flex-1 rounded-lg gap-1.5">
+              <Camera className="w-3.5 h-3.5" />写真
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex-1 rounded-lg gap-1.5">
+              <RefreshCw className="w-3.5 h-3.5" />履歴
+            </TabsTrigger>
+            <TabsTrigger value="bulk" className="flex-1 rounded-lg gap-1.5">
+              <CalendarRange className="w-3.5 h-3.5" />まとめて
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="camera" className="mt-4 space-y-4">
-          {pendingResult ? (
-            <div className="space-y-3">
-              {pendingImageUrl && (
-                <img src={pendingImageUrl} alt="food" className="w-full h-48 object-cover rounded-xl" />
-              )}
-              <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-                <p className="font-medium">{pendingResult.description}</p>
-                <div className="flex gap-4">
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">タンパク質</p>
-                    <p className="font-semibold text-primary text-lg">{pendingResult.protein_g}g</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">カロリー</p>
-                    <p className="font-semibold text-lg">{pendingResult.calorie_kcal}kcal</p>
-                  </div>
-                  <div className="text-center flex-1">
-                    <p className="text-xs text-muted-foreground">食事区分</p>
-                    <select
-                      className="text-sm font-medium bg-transparent border-none outline-none"
-                      value={pendingResult.meal_type}
-                      onChange={(e) => setPendingResult({ ...pendingResult, meal_type: e.target.value as MealType })}
-                    >
-                      {(["breakfast", "lunch", "dinner", "snack"] as MealType[]).map((t) => (
-                        <option key={t} value={t}>{MEAL_TYPE_LABELS[t]}</option>
-                      ))}
-                    </select>
+          <TabsContent value="camera" className="mt-4 space-y-4">
+            {pendingResult ? (
+              <div className="space-y-3">
+                {pendingImageUrl && (
+                  <img src={pendingImageUrl} alt="food" className="w-full h-48 object-cover rounded-xl" />
+                )}
+                <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+                  <p className="font-semibold">{pendingResult.description}</p>
+                  <div className="flex gap-4">
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">タンパク質</p>
+                      <p className="font-bold text-primary text-lg">{pendingResult.protein_g}g</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">カロリー</p>
+                      <p className="font-bold text-lg">{pendingResult.calorie_kcal}kcal</p>
+                    </div>
+                    <div className="text-center flex-1">
+                      <p className="text-xs text-muted-foreground">食事区分</p>
+                      <select
+                        className="text-sm font-medium bg-transparent border-none outline-none"
+                        value={pendingResult.meal_type}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                          setPendingResult({ ...pendingResult, meal_type: e.target.value as MealType })
+                        }
+                      >
+                        {(["breakfast", "lunch", "dinner", "snack"] as MealType[]).map((t) => (
+                          <option key={t} value={t}>{MEAL_TYPE_LABELS[t]}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1 rounded-xl" onClick={() => { setPendingResult(null); setPendingImageUrl(null); }}>
+                    キャンセル
+                  </Button>
+                  <Button className="flex-1 rounded-xl bg-primary" onClick={saveMeal} disabled={saving}>
+                    {saving ? "保存中..." : "記録する"}
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => { setPendingResult(null); setPendingImageUrl(null); }}>
-                  キャンセル
-                </Button>
-                <Button className="flex-1 rounded-xl bg-primary" onClick={saveMeal} disabled={saving}>
-                  {saving ? "保存中..." : "記録する"}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
+            ) : (
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={analyzing}
                 className={cn(
-                  "w-full h-48 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-colors",
+                  "w-full h-44 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-colors",
                   analyzing ? "border-primary/50 bg-primary/5" : "border-border hover:border-primary/50 hover:bg-primary/5"
                 )}
               >
                 {analyzing ? (
                   <>
-                    <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     <p className="text-sm text-muted-foreground">AIが解析中...</p>
                   </>
                 ) : (
                   <>
-                    <Camera className="w-10 h-10 text-muted-foreground" />
+                    <Camera className="w-9 h-9 text-muted-foreground" strokeWidth={1.5} />
                     <div className="text-center">
-                      <p className="text-sm font-medium text-foreground">写真を選択</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">カメラ or ギャラリー</p>
+                      <p className="text-sm font-semibold text-foreground">写真を選択</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">カメラまたはギャラリーから</p>
                     </div>
                   </>
                 )}
               </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handlePhotoCapture}
-              />
-            </div>
-          )}
+            )}
+            <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoCapture} />
 
-          {todayMeals.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-muted-foreground">今日の記録</h3>
-              {todayMeals.map((meal) => (
-                <div key={meal.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
-                  {meal.photo_url && (
-                    <img src={meal.photo_url} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate">{meal.description ?? "食事"}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {meal.meal_type ? MEAL_TYPE_LABELS[meal.meal_type] : ""} ·{" "}
-                      <span className="text-primary font-medium">{meal.protein_g}g</span>
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => setEditingMeal(meal)} className="p-1.5 hover:bg-muted rounded-lg">
-                      <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
-                    <button onClick={() => deleteMeal(meal.id)} className="p-1.5 hover:bg-red-50 rounded-lg">
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </button>
-                  </div>
+            {todayMeals.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">今日の記録</h3>
+                <div className="md:grid md:grid-cols-2 md:gap-2 space-y-2 md:space-y-0">
+                  {todayMeals.map((meal) => (
+                    <div key={meal.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
+                      {meal.photo_url && (
+                        <img src={meal.photo_url} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{meal.description ?? "食事"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {meal.meal_type ? MEAL_TYPE_LABELS[meal.meal_type] : ""} ·{" "}
+                          <span className="text-primary font-semibold">{meal.protein_g}g</span>
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => setEditingMeal(meal)} className="p-1.5 hover:bg-muted rounded-lg">
+                          <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
+                        <button onClick={() => deleteMeal(meal.id)} className="p-1.5 hover:bg-red-50 rounded-lg">
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="history" className="mt-4 space-y-2">
-          <p className="text-xs text-muted-foreground">過去の食事をタップして今日に追加</p>
-          {recentMeals.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">記録がありません</p>
-          ) : (
-            recentMeals.map((meal) => (
-              <div key={meal.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
-                {meal.photo_url && (
-                  <img src={meal.photo_url} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{meal.description ?? "食事"}</p>
-                  <p className="text-xs text-muted-foreground">
-                    <span className="text-primary font-medium">{meal.protein_g}g</span>
-                    {meal.calorie_kcal && ` · ${meal.calorie_kcal}kcal`}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(meal.logged_at).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })}
-                  </p>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="rounded-lg flex-shrink-0 text-xs"
-                  onClick={() => repeatMeal(meal)}
-                >
-                  <Plus className="w-3 h-3 mr-1" />今日に追加
-                </Button>
               </div>
-            ))
-          )}
-        </TabsContent>
+            )}
+          </TabsContent>
 
-        <TabsContent value="bulk" className="mt-4 space-y-4">
-          <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-            <p className="text-sm font-medium">何日分まとめて登録しますか？</p>
-            <div className="flex gap-2">
-              {[3, 5, 7].map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setBulkDays(d)}
-                  className={cn(
-                    "flex-1 py-2 rounded-lg text-sm font-medium border transition-colors",
-                    bulkDays === d ? "bg-primary text-white border-primary" : "border-border text-foreground"
-                  )}
-                >
-                  {d}日
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {recurringMeals.length === 0 ? (
-            <div className="text-center py-8 space-y-3">
-              <p className="text-sm text-muted-foreground">定期登録メニューがありません</p>
-              <RecurringMealDialog userId={userId} onSaved={router.refresh} />
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {recurringMeals.map((meal) => (
-                <div key={meal.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{meal.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {meal.meal_type ? MEAL_TYPE_LABELS[meal.meal_type] : ""} ·{" "}
-                      <span className="text-primary font-medium">{meal.protein_g}g</span>
-                    </p>
+          <TabsContent value="history" className="mt-4 space-y-2">
+            <p className="text-xs text-muted-foreground">過去の食事をタップして今日に追加</p>
+            {recentMeals.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">記録がありません</p>
+            ) : (
+              <div className="md:grid md:grid-cols-2 md:gap-2 space-y-2 md:space-y-0">
+                {recentMeals.map((meal) => (
+                  <div key={meal.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
+                    {meal.photo_url && (
+                      <img src={meal.photo_url} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{meal.description ?? "食事"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        <span className="text-primary font-semibold">{meal.protein_g}g</span>
+                        {meal.calorie_kcal && ` · ${meal.calorie_kcal}kcal`}
+                        {" · "}{new Date(meal.logged_at).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" className="rounded-lg flex-shrink-0 text-xs" onClick={() => repeatMeal(meal)}>
+                      <Plus className="w-3 h-3 mr-1" />追加
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    className="rounded-lg flex-shrink-0 text-xs bg-primary"
-                    onClick={() => bulkRegister(meal)}
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="bulk" className="mt-4 space-y-4">
+            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <p className="text-sm font-semibold">何日分まとめて登録しますか？</p>
+              <div className="flex gap-2">
+                {[3, 5, 7].map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setBulkDays(d)}
+                    className={cn(
+                      "flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors",
+                      bulkDays === d ? "bg-primary text-white border-primary" : "border-border text-foreground hover:bg-muted"
+                    )}
                   >
-                    {bulkDays}日分登録
-                  </Button>
-                </div>
-              ))}
-              <RecurringMealDialog userId={userId} onSaved={router.refresh} />
+                    {d}日
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
+
+            {recurringMeals.length === 0 ? (
+              <div className="text-center py-8 space-y-3">
+                <p className="text-sm text-muted-foreground">定期登録メニューがありません</p>
+                <RecurringMealDialog userId={userId} onSaved={router.refresh} />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {recurringMeals.map((meal) => (
+                  <div key={meal.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold">{meal.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {meal.meal_type ? MEAL_TYPE_LABELS[meal.meal_type] : ""} ·{" "}
+                        <span className="text-primary font-semibold">{meal.protein_g}g</span>
+                      </p>
+                    </div>
+                    <Button size="sm" className="rounded-lg flex-shrink-0 text-xs bg-primary" onClick={() => bulkRegister(meal)}>
+                      {bulkDays}日分登録
+                    </Button>
+                  </div>
+                ))}
+                <RecurringMealDialog userId={userId} onSaved={router.refresh} />
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {editingMeal && (
         <MealEditDialog

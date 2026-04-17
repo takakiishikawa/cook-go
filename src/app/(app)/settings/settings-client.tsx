@@ -39,7 +39,6 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
     setSaving(false);
-
     if (error) { toast.error("保存に失敗しました"); return; }
     toast.success("設定を保存しました");
   };
@@ -52,16 +51,14 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
 
   const calcProteinTarget = () => {
     const weight = parseFloat(weightKg);
-    if (!isNaN(weight)) {
-      setProteinTarget(String(Math.round(weight * 1.5)));
-    }
+    if (!isNaN(weight)) setProteinTarget(String(Math.round(weight * 1.5)));
   };
 
   return (
     <div className="flex flex-col">
       <AppHeader title="設定" />
 
-      <div className="px-4 pt-4 space-y-6">
+      <div className="px-4 md:px-8 pt-4 space-y-4 pb-8">
         <div className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4">
           <Avatar className="w-14 h-14">
             <AvatarImage src={userAvatar} />
@@ -70,14 +67,13 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-semibold">{userName || "ユーザー"}</p>
+            <p className="font-bold">{userName || "ユーザー"}</p>
             <p className="text-sm text-muted-foreground">{userEmail}</p>
           </div>
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
-          <h2 className="font-heading text-lg">身体情報</h2>
-
+          <h2 className="text-base font-bold">身体情報</h2>
           <div className="space-y-1.5">
             <Label>体重 (kg)</Label>
             <div className="flex gap-2">
@@ -88,18 +84,12 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWeightKg(e.target.value)}
                 className="rounded-xl flex-1"
               />
-              <Button
-                variant="outline"
-                className="rounded-xl"
-                onClick={calcProteinTarget}
-                disabled={!weightKg}
-              >
+              <Button variant="outline" className="rounded-xl" onClick={calcProteinTarget} disabled={!weightKg}>
                 自動計算
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">体重×1.5gでタンパク質目標を自動計算します</p>
           </div>
-
           <div className="space-y-1.5">
             <Label>タンパク質目標 (g/日)</Label>
             <Input
@@ -108,38 +98,31 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProteinTarget(e.target.value)}
               className="rounded-xl"
             />
-            <p className="text-xs text-muted-foreground">
-              現在の設定: {proteinTarget}g/日
-              {weightKg && ` （体重 ${weightKg}kg × 1.5）`}
-            </p>
           </div>
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-          <h2 className="font-heading text-lg">目標の参考値</h2>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>・筋肉増量: 体重 × 1.6〜2.2g</p>
-            <p>・体脂肪減少（維持筋肉量）: 体重 × 1.2〜1.6g</p>
-            <p>・一般維持: 体重 × 0.8〜1.0g</p>
+          <h2 className="text-base font-bold">目標の参考値</h2>
+          <div className="space-y-1.5 text-sm text-muted-foreground">
+            <p>筋肉増量: 体重 × 1.6〜2.2g</p>
+            <p>体脂肪減少（筋肉量維持）: 体重 × 1.2〜1.6g</p>
+            <p>一般維持: 体重 × 0.8〜1.0g</p>
           </div>
         </div>
 
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full h-12 rounded-xl bg-primary"
-        >
-          {saving ? "保存中..." : "設定を保存する"}
-        </Button>
-
-        <Button
-          variant="outline"
-          onClick={handleLogout}
-          className="w-full h-12 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/5 gap-2"
-        >
-          <LogOut className="w-4 h-4" />
-          ログアウト
-        </Button>
+        <div className="md:flex md:gap-3 space-y-3 md:space-y-0">
+          <Button onClick={handleSave} disabled={saving} className="w-full h-12 rounded-xl bg-primary md:flex-1">
+            {saving ? "保存中..." : "設定を保存する"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            className="w-full h-12 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/5 gap-2 md:w-auto md:px-6"
+          >
+            <LogOut className="w-4 h-4" />
+            ログアウト
+          </Button>
+        </div>
       </div>
     </div>
   );
