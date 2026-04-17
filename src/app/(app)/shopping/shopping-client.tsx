@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Trash2, ShoppingBag } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Trash2, ShoppingBag, Globe, X, ImageOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,10 +9,43 @@ import { Input } from "@/components/ui/input";
 import { AppHeader } from "@/components/layout/app-header";
 import { ShoppingListItem } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface ShoppingClientProps {
   userId: string;
   items: ShoppingListItem[];
+}
+
+type Translation = { en: string; vi: string };
+
+function ItemImage({ name }: { name: string }) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/pantry/image?name=${encodeURIComponent(name)}`)
+      .then(r => r.json())
+      .then(d => { if (!cancelled) setImageUrl(d.imageUrl ?? null); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [name]);
+
+  if (!imageUrl || error) {
+    return (
+      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+        <ImageOff className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={imageUrl}
+      alt={name}
+      className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-muted"
+      onError={() => setError(true)}
+    />
+  );
 }
 
 export function ShoppingClient({ userId, items: initialItems }: ShoppingClientProps) {
@@ -20,9 +53,36 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
   const [items, setItems] = useState<ShoppingListItem[]>(initialItems);
   const [newItemName, setNewItemName] = useState("");
   const [adding, setAdding] = useState(false);
+  const [storeMode, setStoreMode] = useState(false);
+  const [translations, setTranslations] = useState<Record<string, Translation>>({});
+  const [translating, setTranslating] = useState(false);
 
   const unchecked = items.filter(i => !i.checked);
   const checked = items.filter(i => i.checked);
+
+  const fetchTranslations = async (itemList: ShoppingListItem[]) => {
+    const names = itemList.map(i => i.name);
+    if (names.length === 0) return;
+    setTranslating(true);
+    try {
+      const res = await fetch("/api/shopping/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ names }),
+      });
+      const data = await res.json();
+      setTranslations(data.translations ?? {});
+    } catch {
+      // silent fail
+    } finally {
+      setTranslating(false);
+    }
+  };
+
+  const enterStoreMode = () => {
+    setStoreMode(true);
+    fetchTranslations(unchecked);
+  };
 
   const toggleItem = async (item: ShoppingListItem) => {
     const { error } = await supabase
@@ -80,7 +140,42 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
     <div className="flex flex-col">
       <AppHeader title="買い物リスト" />
 
-      <div className="px-4 md:px-8 pt-4 space-y-4">
+      {/* 店員モード overlay */}
+      {storeMode && (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <span className="font-bold text-base">🛒 店員に見せる / Show to staff</span>
+            <button onClick={() => setStoreMode(false)} className="p-2 rounded-xl hover:bg-muted">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+            {translating && (
+              <div className="text-center py-4 text-sm text-muted-foreground">翻訳中...</div>
+            )}
+            {unchecked.map(item => {
+              const t = translations[item.name];
+              return (
+                <div key={item.id} className="bg-card border border-border rounded-2xl p-4 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <ItemImage name={item.name} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-2xl font-bold text-foreground">{item.name}</p>
+                      {t?.en && <p className="text-lg font-medium text-muted-foreground">{t.en}</p>}
+                      {t?.vi && <p className="text-lg font-semibold text-blue-600">{t.vi}</p>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {unchecked.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">未購入アイテムがありません</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="px-4 pt-4 space-y-4">
         <div className="flex gap-2">
           <Input
             placeholder="アイテムを追加..."
@@ -94,6 +189,17 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
           </Button>
         </div>
 
+        {unchecked.length > 0 && (
+          <Button
+            variant="outline"
+            onClick={enterStoreMode}
+            className="w-full rounded-xl gap-2"
+          >
+            <Globe className="w-4 h-4" />
+            店員に見せる（日本語・English・Tiếng Việt）
+          </Button>
+        )}
+
         {items.length === 0 ? (
           <div className="text-center py-16 space-y-3">
             <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto">
@@ -105,16 +211,24 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
             </p>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-5 pb-8">
             {unchecked.length > 0 && (
               <div className="space-y-2">
                 <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">未購入 ({unchecked.length})</p>
-                <div className="md:grid md:grid-cols-2 md:gap-2 space-y-1.5 md:space-y-0">
+                <div className="space-y-1.5">
                   {unchecked.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3">
-                      <Checkbox checked={false} onCheckedChange={() => toggleItem(item)} className="rounded-full" />
-                      <span className="flex-1 text-sm font-medium">{item.name}</span>
-                      <button onClick={() => deleteItem(item.id)} className="p-1 hover:bg-muted rounded-lg">
+                    <div key={item.id} className="flex items-center gap-3 bg-card border border-border rounded-xl px-3 py-2.5">
+                      <Checkbox checked={false} onCheckedChange={() => toggleItem(item)} className="rounded-full flex-shrink-0" />
+                      <ItemImage name={item.name} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{item.name}</p>
+                        {translations[item.name] && (
+                          <p className="text-xs text-muted-foreground">
+                            {translations[item.name].en} · {translations[item.name].vi}
+                          </p>
+                        )}
+                      </div>
+                      <button onClick={() => deleteItem(item.id)} className="p-1 hover:bg-muted rounded-lg flex-shrink-0">
                         <Trash2 className="w-4 h-4 text-muted-foreground" />
                       </button>
                     </div>
@@ -129,12 +243,13 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
                   <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">購入済み ({checked.length})</p>
                   <button onClick={clearChecked} className="text-sm text-destructive font-medium">クリア</button>
                 </div>
-                <div className="md:grid md:grid-cols-2 md:gap-2 space-y-1.5 md:space-y-0">
+                <div className="space-y-1.5">
                   {checked.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3 bg-muted border border-border rounded-xl px-4 py-3 opacity-60">
-                      <Checkbox checked={true} onCheckedChange={() => toggleItem(item)} className="rounded-full" />
+                    <div key={item.id} className={cn("flex items-center gap-3 bg-muted border border-border rounded-xl px-3 py-2.5 opacity-60")}>
+                      <Checkbox checked={true} onCheckedChange={() => toggleItem(item)} className="rounded-full flex-shrink-0" />
+                      <ItemImage name={item.name} />
                       <span className="flex-1 text-sm line-through text-muted-foreground">{item.name}</span>
-                      <button onClick={() => deleteItem(item.id)} className="p-1 hover:bg-background rounded-lg">
+                      <button onClick={() => deleteItem(item.id)} className="p-1 hover:bg-background rounded-lg flex-shrink-0">
                         <Trash2 className="w-4 h-4 text-muted-foreground" />
                       </button>
                     </div>

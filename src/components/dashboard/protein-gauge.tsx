@@ -13,15 +13,15 @@ export function ProteinGauge({ current, target }: ProteinGaugeProps) {
   const isOver = current > target;
 
   const gaugeColor = pct < 50
-    ? "bg-green-200"
+    ? "bg-primary/35"
     : pct < 80
-    ? "bg-green-400"
+    ? "bg-primary/65"
     : pct <= 100
     ? "bg-primary"
     : "bg-amber-400";
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+    <div className="bg-card border border-border rounded-2xl p-5 space-y-4 card-shadow">
       <div className="flex items-end justify-between">
         <div>
           <p className="text-sm text-muted-foreground font-medium uppercase tracking-wide">タンパク質</p>

@@ -2,9 +2,10 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Plus, Trash2, Edit2, RefreshCw, CalendarRange } from "lucide-react";
+import { Camera, Plus, Trash2, Edit2, RefreshCw, CalendarRange, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppHeader } from "@/components/layout/app-header";
 import { MealLog, MealType, MEAL_TYPE_LABELS, RecurringMeal } from "@/types/database";
@@ -36,6 +37,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
   const [analyzing, setAnalyzing] = useState(false);
   const [pendingResult, setPendingResult] = useState<AnalysisResult | null>(null);
   const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
+  const [recipeUrl, setRecipeUrl] = useState("");
   const [editingMeal, setEditingMeal] = useState<MealLog | null>(null);
   const [saving, setSaving] = useState(false);
   const [bulkDays, setBulkDays] = useState(5);
@@ -61,7 +63,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
         const res = await fetch("/api/meals/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image_base64: base64, meal_type: getCurrentMealType() }),
+          body: JSON.stringify({ image_base64: base64, meal_type: getCurrentMealType(), recipe_url: recipeUrl.trim() || undefined }),
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
@@ -179,6 +181,18 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
           </TabsList>
 
           <TabsContent value="camera" className="mt-4 space-y-4">
+            {/* レシピURL（任意） */}
+            {!pendingResult && (
+              <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-xl px-3 py-2">
+                <Link2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <Input
+                  placeholder="レシピURLを貼る（任意）— より正確に分析できます"
+                  value={recipeUrl}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRecipeUrl(e.target.value)}
+                  className="border-0 bg-transparent text-sm h-auto p-0 focus-visible:ring-0 placeholder:text-muted-foreground"
+                />
+              </div>
+            )}
             {pendingResult ? (
               <div className="space-y-3">
                 {pendingImageUrl && (

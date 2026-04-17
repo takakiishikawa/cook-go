@@ -11,7 +11,7 @@ interface AppHeaderProps {
 
 export function AppHeader({ title, showSettings = false, backHref }: AppHeaderProps) {
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-sm border-b border-border">
+    <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border">
       <div className="flex items-center gap-3 px-4 py-3.5 md:px-6">
         {backHref && (
           <Link href={backHref} className="p-1.5 rounded-xl hover:bg-muted transition-colors -ml-1">

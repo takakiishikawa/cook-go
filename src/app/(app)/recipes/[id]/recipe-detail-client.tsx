@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Clock, Check, X } from "lucide-react";
+import { ShoppingCart, Clock, Check, X, Play, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/layout/app-header";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,29 @@ import { cn } from "@/lib/utils";
 interface RecipeDetailClientProps {
   recipe: Recipe;
   pantryItems: Array<{ name: string; in_stock: boolean }>;
+}
+
+function RecipeHeroImage({ title }: { title: string }) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const query = title.split(/[のとでや]/)[0].trim() || title;
+    fetch(`/api/pantry/image?name=${encodeURIComponent(query)}`)
+      .then(r => r.json())
+      .then(d => setImageUrl(d.imageUrl ?? null))
+      .catch(() => {});
+  }, [title]);
+
+  if (!imageUrl) {
+    return (
+      <div className="w-full h-48 rounded-2xl bg-muted flex items-center justify-center">
+        <UtensilsCrossed className="w-10 h-10 text-muted-foreground" strokeWidth={1.5} />
+      </div>
+    );
+  }
+  return (
+    <img src={imageUrl} alt={title} className="w-full h-48 rounded-2xl object-cover" />
+  );
 }
 
 export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientProps) {
@@ -25,6 +48,8 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
 
   const inPantryCount = ingredients.filter(i => pantryNames.has(i.name.toLowerCase())).length;
   const needToBuyCount = ingredients.length - inPantryCount;
+
+  const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(recipe.title + " 作り方")}`;
 
   const generateShoppingList = async () => {
     setGenerating(true);
@@ -61,33 +86,37 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
     <div className="flex flex-col">
       <AppHeader title={recipe.title} backHref="/recipes" />
 
-      <div className="px-4 md:px-8 pt-4 space-y-6 pb-8">
-        <div className="flex flex-wrap gap-3">
+      <div className="px-4 pt-4 space-y-5 pb-8">
+        {/* Hero image */}
+        <RecipeHeroImage title={recipe.title} />
+
+        {/* Badges */}
+        <div className="flex flex-wrap gap-2">
           {recipe.protein_g_per_serving && (
             <div className="bg-primary/10 rounded-xl px-4 py-2 text-center">
-              <p className="text-sm text-muted-foreground">タンパク質/食</p>
-              <p className="font-bold text-primary text-xl">{recipe.protein_g_per_serving}g</p>
+              <p className="text-xs text-muted-foreground">タンパク質/食</p>
+              <p className="font-bold text-primary text-lg">{recipe.protein_g_per_serving}g</p>
             </div>
           )}
           {recipe.calorie_kcal_per_serving && (
             <div className="bg-muted rounded-xl px-4 py-2 text-center">
-              <p className="text-sm text-muted-foreground">カロリー/食</p>
-              <p className="font-bold text-xl">{recipe.calorie_kcal_per_serving}kcal</p>
+              <p className="text-xs text-muted-foreground">カロリー/食</p>
+              <p className="font-bold text-lg">{recipe.calorie_kcal_per_serving}kcal</p>
             </div>
           )}
           {recipe.prep_time_min && (
             <div className="bg-muted rounded-xl px-4 py-2 flex items-center gap-2">
               <Clock className="w-4 h-4 text-muted-foreground" />
               <div>
-                <p className="text-sm text-muted-foreground">調理時間</p>
+                <p className="text-xs text-muted-foreground">調理時間</p>
                 <p className="font-bold">{recipe.prep_time_min}分</p>
               </div>
             </div>
           )}
           {recipe.servings && recipe.servings > 1 && (
             <div className="bg-muted rounded-xl px-4 py-2 text-center">
-              <p className="text-sm text-muted-foreground">食分</p>
-              <p className="font-bold text-xl">{recipe.servings}食分</p>
+              <p className="text-xs text-muted-foreground">食分</p>
+              <p className="font-bold text-lg">{recipe.servings}食分</p>
             </div>
           )}
         </div>
@@ -96,6 +125,7 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
           <p className="text-sm text-muted-foreground leading-relaxed">{recipe.description}</p>
         )}
 
+        {/* Ingredients */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold">食材リスト</h2>
@@ -104,25 +134,25 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
             </span>
           </div>
           {ingredients.length > 0 ? (
-            <div className="space-y-1.5 md:grid md:grid-cols-2 md:gap-1.5 md:space-y-0">
+            <div className="space-y-1.5 grid grid-cols-2 gap-1.5">
               {ingredients.map((ing, i) => {
                 const inPantry = pantryNames.has(ing.name.toLowerCase());
                 return (
                   <div
                     key={i}
                     className={cn(
-                      "flex items-center justify-between px-4 py-2.5 rounded-xl",
+                      "flex items-center justify-between px-3 py-2 rounded-xl",
                       inPantry ? "bg-primary/5 border border-primary/20" : "bg-muted border border-border"
                     )}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       {inPantry
-                        ? <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                        : <X className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        ? <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                        : <X className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                       }
-                      <span className="text-sm">{ing.name}</span>
+                      <span className="text-sm truncate">{ing.name}</span>
                     </div>
-                    <span className="text-sm text-muted-foreground">{ing.amount}</span>
+                    <span className="text-xs text-muted-foreground flex-shrink-0 ml-1">{ing.amount}</span>
                   </div>
                 );
               })}
@@ -138,9 +168,21 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
           )}
         </div>
 
+        {/* Steps */}
         {steps.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-base font-bold">作り方</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold">作り方</h2>
+              <a
+                href={youtubeSearchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-sm text-red-500 font-medium hover:underline"
+              >
+                <Play className="w-4 h-4" />
+                動画で見る
+              </a>
+            </div>
             <div className="space-y-2">
               {steps.map((step) => {
                 const done = completedSteps.has(step.order);

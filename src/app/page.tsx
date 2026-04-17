@@ -17,8 +17,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white px-6">
-      <div className="w-full max-w-sm flex flex-col items-center gap-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.56_0.19_155_/_0.08),transparent)] pointer-events-none" />
+      <div className="w-full max-w-sm flex flex-col items-center gap-8 relative z-10">
         <div className="flex flex-col items-center gap-3">
           <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center shadow-lg">
             <Leaf className="w-10 h-10 text-white" strokeWidth={1.5} />
@@ -83,3 +84,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

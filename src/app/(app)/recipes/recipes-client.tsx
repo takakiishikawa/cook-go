@@ -1,13 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Clock, RefreshCw, ChevronRight, UtensilsCrossed } from "lucide-react";
+import { Clock, RefreshCw, ChevronRight, UtensilsCrossed, ImageOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AppHeader } from "@/components/layout/app-header";
 import { Recipe } from "@/types/database";
 import { useRouter } from "next/navigation";
+
+function RecipeImage({ title }: { title: string }) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Search by main ingredient (text before の/と/で/や)
+    const query = title.split(/[のとでや]/)[0].trim() || title;
+    fetch(`/api/pantry/image?name=${encodeURIComponent(query)}`)
+      .then(r => r.json())
+      .then(d => { if (!cancelled) setImageUrl(d.imageUrl ?? null); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [title]);
+
+  if (!imageUrl || error) {
+    return (
+      <div className="w-full h-36 rounded-xl bg-muted flex items-center justify-center">
+        <UtensilsCrossed className="w-8 h-8 text-muted-foreground" strokeWidth={1.5} />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={imageUrl}
+      alt={title}
+      className="w-full h-36 rounded-xl object-cover bg-muted"
+      onError={() => setError(true)}
+    />
+  );
+}
 
 interface RecipesClientProps {
   recipes: Recipe[];
@@ -37,7 +69,7 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
     <div className="flex flex-col">
       <AppHeader title="レシピ" />
 
-      <div className="px-4 md:px-8 pt-4 space-y-4">
+      <div className="px-4 pt-4 pb-8 space-y-4">
         <Button
           onClick={generateRecipes}
           disabled={generating}
@@ -58,40 +90,28 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
             </p>
           </div>
         ) : (
-          <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+          <div className="grid grid-cols-2 gap-3">
             {recipes.map((recipe) => (
               <Link key={recipe.id} href={`/recipes/${recipe.id}`}>
-                <div className="bg-card border border-border rounded-xl p-4 hover:bg-muted transition-colors">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground">{recipe.title}</h3>
-                      {recipe.description && (
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{recipe.description}</p>
+                <div className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
+                  <RecipeImage title={recipe.title} />
+                  <div className="p-3 space-y-1.5">
+                    <h3 className="font-semibold text-foreground text-sm line-clamp-2 leading-snug">{recipe.title}</h3>
+                    <div className="flex flex-wrap gap-1">
+                      {recipe.protein_g_per_serving && (
+                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold">
+                          P {recipe.protein_g_per_serving}g
+                        </span>
                       )}
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {recipe.protein_g_per_serving && (
-                          <span className="text-sm bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
-                            P: {recipe.protein_g_per_serving}g
-                          </span>
-                        )}
-                        {recipe.calorie_kcal_per_serving && (
-                          <span className="text-sm bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-                            {recipe.calorie_kcal_per_serving}kcal
-                          </span>
-                        )}
-                        {recipe.prep_time_min && (
-                          <span className="text-sm bg-muted text-muted-foreground px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <Clock className="w-3 h-3" />{recipe.prep_time_min}分
-                          </span>
-                        )}
-                        {recipe.is_meal_prep_friendly && (
-                          <span className="text-sm bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
-                            作り置き可
-                          </span>
-                        )}
-                      </div>
+                      {recipe.prep_time_min && (
+                        <span className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                          <Clock className="w-2.5 h-2.5" />{recipe.prep_time_min}分
+                        </span>
+                      )}
+                      {recipe.is_meal_prep_friendly && (
+                        <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">作り置き</span>
+                      )}
                     </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                   </div>
                 </div>
               </Link>

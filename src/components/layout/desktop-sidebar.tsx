@@ -50,12 +50,12 @@ export function DesktopSidebar() {
 
   return (
     <aside className="hidden md:flex flex-col w-60 min-h-screen bg-sidebar border-r border-sidebar-border fixed left-0 top-0 z-40">
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
-        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+      <Link href="/dashboard" className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border hover:opacity-75 transition-opacity">
+        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0 shadow-sm">
           <Leaf className="w-4 h-4 text-white" strokeWidth={2} />
         </div>
-        <span className="font-bold text-lg text-foreground">CookGo</span>
-      </div>
+        <span className="font-bold text-base text-sidebar-accent-foreground tracking-tight">CookGo</span>
+      </Link>
 
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map(({ href, icon: Icon, label }) => {
@@ -99,20 +99,20 @@ export function DesktopSidebar() {
           </button>
 
           {appsOpen && (
-            <div className="absolute bottom-full left-0 right-0 mb-1 bg-white border border-border rounded-xl shadow-lg overflow-hidden z-50">
+            <div className="absolute bottom-full left-0 right-0 mb-1 bg-sidebar-accent border border-sidebar-border rounded-xl shadow-xl overflow-hidden z-50">
               {goApps.map((app) => {
                 if (app.isCurrent) {
                   return (
                     <div
                       key={app.name}
-                      className="flex items-center gap-3 px-3 py-2.5 bg-primary/5 cursor-default"
+                      className="flex items-center gap-3 px-3 py-2.5 bg-sidebar-primary/10 cursor-default"
                     >
                       <span
-                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        className="w-2 h-2 rounded-full flex-shrink-0"
                         style={{ backgroundColor: app.color }}
                       />
-                      <span className="text-sm font-semibold text-primary flex-1">{app.name}</span>
-                      <span className="text-xs text-primary font-medium">現在</span>
+                      <span className="text-sm font-semibold text-sidebar-accent-foreground flex-1">{app.name}</span>
+                      <span className="text-xs text-sidebar-primary font-medium">現在</span>
                     </div>
                   );
                 }
@@ -121,13 +121,13 @@ export function DesktopSidebar() {
                     key={app.name}
                     href={app.href}
                     onClick={() => setAppsOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 hover:bg-sidebar-accent/50 transition-colors"
                   >
                     <span
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      className="w-2 h-2 rounded-full flex-shrink-0"
                       style={{ backgroundColor: app.color }}
                     />
-                    <span className="text-sm font-medium text-foreground">{app.name}</span>
+                    <span className="text-sm font-medium text-sidebar-foreground">{app.name}</span>
                   </Link>
                 );
               })}

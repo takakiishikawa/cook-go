@@ -67,6 +67,7 @@ export interface PantryItem {
   name: string;
   category: string | null;
   in_stock: boolean;
+  image_url: string | null;
   updated_at: string;
 }
 
