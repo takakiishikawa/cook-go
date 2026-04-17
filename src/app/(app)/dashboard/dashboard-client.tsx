@@ -32,7 +32,7 @@ export function DashboardClient({ user, settings, todayMeals, weekMeals, recipes
       <div className="px-4 md:px-8 pt-5 pb-4 space-y-5">
         <div>
           <p className="text-sm text-muted-foreground">{greeting}{userName ? `、${userName}` : ""}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5">
             {today.getMonth() + 1}月{today.getDate()}日（{["日", "月", "火", "水", "木", "金", "土"][today.getDay()]}）
           </p>
         </div>

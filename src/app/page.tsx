@@ -39,7 +39,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold">写真を撮るだけ</p>
-                <p className="text-xs text-muted-foreground">AIが自動でタンパク質を推定</p>
+                <p className="text-sm text-muted-foreground">AIが自動でタンパク質を推定</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -48,7 +48,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold">タンパク質ゲージ</p>
-                <p className="text-xs text-muted-foreground">今日の達成状況をひと目で確認</p>
+                <p className="text-sm text-muted-foreground">今日の達成状況をひと目で確認</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -57,7 +57,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold">AIレシピ提案</p>
-                <p className="text-xs text-muted-foreground">手持ち食材でミールプレップ</p>
+                <p className="text-sm text-muted-foreground">手持ち食材でミールプレップ</p>
               </div>
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function LoginPage() {
           </Button>
         </div>
 
-        <p className="text-xs text-muted-foreground text-center">
+        <p className="text-sm text-muted-foreground text-center">
           ログインすることで、利用規約に同意したものとみなします。
         </p>
       </div>

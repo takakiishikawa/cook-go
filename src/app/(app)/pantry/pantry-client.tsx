@@ -107,7 +107,7 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
             <button
               key={cat}
               onClick={() => setFilterCategory(cat)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
                 filterCategory === cat
                   ? "bg-primary text-white"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -121,7 +121,7 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
         <div className="space-y-5 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
           {Object.entries(groupedItems).map(([category, categoryItems]) => (
             <div key={category} className="space-y-2">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{category}</h3>
+              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wide">{category}</h3>
               <div className="space-y-1">
                 {categoryItems.map(item => (
                   <div key={item.id} className="flex items-center justify-between bg-card border border-border rounded-xl px-4 py-3">

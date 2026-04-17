@@ -28,7 +28,7 @@ export function BottomNav() {
                   <Icon className="w-6 h-6 text-white" strokeWidth={2.5} />
                 </div>
                 <span className={cn(
-                  "text-[11px] mt-1 font-medium",
+                  "text-sm mt-1 font-medium",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}>{label}</span>
               </Link>
@@ -41,7 +41,7 @@ export function BottomNav() {
                 strokeWidth={isActive ? 2.5 : 2}
               />
               <span className={cn(
-                "text-[11px] font-medium",
+                "text-sm font-medium",
                 isActive ? "text-primary" : "text-muted-foreground"
               )}>{label}</span>
             </Link>

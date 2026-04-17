@@ -24,7 +24,7 @@ export function MealSummary({ meals }: MealSummaryProps) {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">今日の食事</h3>
+      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">今日の食事</h3>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         {mealTypes.map((type) => {
           const typeMeals = getMealsForType(type);
@@ -50,13 +50,13 @@ export function MealSummary({ meals }: MealSummaryProps) {
                 <Icon className={cn("w-4 h-4", hasLog ? "text-primary" : "text-muted-foreground")} strokeWidth={2} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground">{MEAL_TYPE_LABELS[type]}</p>
+                <p className="text-sm text-muted-foreground">{MEAL_TYPE_LABELS[type]}</p>
                 {hasLog ? (
                   <p className="text-sm font-bold text-primary">{Math.round(totalProtein)}g</p>
                 ) : (
                   <div className="flex items-center gap-0.5 text-muted-foreground">
                     <Plus className="w-3 h-3" />
-                    <span className="text-xs">追加</span>
+                    <span className="text-sm">追加</span>
                   </div>
                 )}
               </div>

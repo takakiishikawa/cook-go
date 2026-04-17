@@ -24,7 +24,7 @@ export function ProteinGauge({ current, target }: ProteinGaugeProps) {
     <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">タンパク質</p>
+          <p className="text-sm text-muted-foreground font-medium uppercase tracking-wide">タンパク質</p>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="font-heading text-4xl text-foreground">{Math.round(current)}</span>
             <span className="text-muted-foreground text-sm">/ {target}g</span>
@@ -35,7 +35,7 @@ export function ProteinGauge({ current, target }: ProteinGaugeProps) {
             <span className="text-amber-500 font-semibold text-sm">+{Math.round(current - target)}g 超過</span>
           ) : (
             <div>
-              <p className="text-xs text-muted-foreground">あと</p>
+              <p className="text-sm text-muted-foreground">あと</p>
               <p className="font-semibold text-foreground">{Math.round(remaining)}g</p>
             </div>
           )}
@@ -49,7 +49,7 @@ export function ProteinGauge({ current, target }: ProteinGaugeProps) {
             style={{ width: `${Math.min(pct, 100)}%` }}
           />
         </div>
-        <div className="flex justify-between text-xs text-muted-foreground">
+        <div className="flex justify-between text-sm text-muted-foreground">
           <span>0g</span>
           <span className={cn("font-medium", pct >= 100 ? "text-primary" : "")}>
             {Math.round(pct)}% 達成

@@ -65,13 +65,13 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
         <div className="flex flex-wrap gap-3">
           {recipe.protein_g_per_serving && (
             <div className="bg-primary/10 rounded-xl px-4 py-2 text-center">
-              <p className="text-xs text-muted-foreground">タンパク質/食</p>
+              <p className="text-sm text-muted-foreground">タンパク質/食</p>
               <p className="font-bold text-primary text-xl">{recipe.protein_g_per_serving}g</p>
             </div>
           )}
           {recipe.calorie_kcal_per_serving && (
             <div className="bg-muted rounded-xl px-4 py-2 text-center">
-              <p className="text-xs text-muted-foreground">カロリー/食</p>
+              <p className="text-sm text-muted-foreground">カロリー/食</p>
               <p className="font-bold text-xl">{recipe.calorie_kcal_per_serving}kcal</p>
             </div>
           )}
@@ -79,14 +79,14 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
             <div className="bg-muted rounded-xl px-4 py-2 flex items-center gap-2">
               <Clock className="w-4 h-4 text-muted-foreground" />
               <div>
-                <p className="text-xs text-muted-foreground">調理時間</p>
+                <p className="text-sm text-muted-foreground">調理時間</p>
                 <p className="font-bold">{recipe.prep_time_min}分</p>
               </div>
             </div>
           )}
           {recipe.servings && recipe.servings > 1 && (
             <div className="bg-muted rounded-xl px-4 py-2 text-center">
-              <p className="text-xs text-muted-foreground">食分</p>
+              <p className="text-sm text-muted-foreground">食分</p>
               <p className="font-bold text-xl">{recipe.servings}食分</p>
             </div>
           )}
@@ -99,7 +99,7 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold">食材リスト</h2>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-sm text-muted-foreground">
               食材庫: {inPantryCount}品 / 購入必要: {needToBuyCount}品
             </span>
           </div>
@@ -154,7 +154,7 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
                     )}
                   >
                     <div className={cn(
-                      "w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold",
+                      "w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold",
                       done ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                     )}>
                       {done ? <Check className="w-3.5 h-3.5" /> : step.order}

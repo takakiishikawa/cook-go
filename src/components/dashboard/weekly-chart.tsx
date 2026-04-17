@@ -28,14 +28,14 @@ export function WeeklyChart({ weekMeals, target }: WeeklyChartProps) {
         <BarChart data={data} barCategoryGap="30%">
           <XAxis
             dataKey="day"
-            tick={{ fontSize: 11, fill: "#9ca3af" }}
+            tick={{ fontSize: 14, fill: "#9ca3af" }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis hide domain={[0, Math.max(target * 1.2, 30)]} />
           <Tooltip
             formatter={(value) => [`${value}g`, "タンパク質"]}
-            contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb" }}
+            contentStyle={{ fontSize: 14, borderRadius: 8, border: "1px solid #e5e7eb" }}
           />
           <ReferenceLine
             y={target}
@@ -51,7 +51,7 @@ export function WeeklyChart({ weekMeals, target }: WeeklyChartProps) {
           />
         </BarChart>
       </ResponsiveContainer>
-      <p className="text-xs text-muted-foreground text-center">--- 目標 {target}g</p>
+      <p className="text-sm text-muted-foreground text-center">--- 目標 {target}g</p>
     </div>
   );
 }

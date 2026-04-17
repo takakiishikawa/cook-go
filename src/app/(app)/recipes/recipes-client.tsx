@@ -66,26 +66,26 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-foreground">{recipe.title}</h3>
                       {recipe.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{recipe.description}</p>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{recipe.description}</p>
                       )}
                       <div className="flex flex-wrap gap-2 mt-2">
                         {recipe.protein_g_per_serving && (
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
+                          <span className="text-sm bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
                             P: {recipe.protein_g_per_serving}g
                           </span>
                         )}
                         {recipe.calorie_kcal_per_serving && (
-                          <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+                          <span className="text-sm bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
                             {recipe.calorie_kcal_per_serving}kcal
                           </span>
                         )}
                         {recipe.prep_time_min && (
-                          <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span className="text-sm bg-muted text-muted-foreground px-2 py-0.5 rounded-full flex items-center gap-1">
                             <Clock className="w-3 h-3" />{recipe.prep_time_min}分
                           </span>
                         )}
                         {recipe.is_meal_prep_friendly && (
-                          <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                          <span className="text-sm bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
                             作り置き可
                           </span>
                         )}

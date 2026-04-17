@@ -188,15 +188,15 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
                   <p className="font-semibold">{pendingResult.description}</p>
                   <div className="flex gap-4">
                     <div className="text-center">
-                      <p className="text-xs text-muted-foreground">タンパク質</p>
+                      <p className="text-sm text-muted-foreground">タンパク質</p>
                       <p className="font-bold text-primary text-lg">{pendingResult.protein_g}g</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-xs text-muted-foreground">カロリー</p>
+                      <p className="text-sm text-muted-foreground">カロリー</p>
                       <p className="font-bold text-lg">{pendingResult.calorie_kcal}kcal</p>
                     </div>
                     <div className="text-center flex-1">
-                      <p className="text-xs text-muted-foreground">食事区分</p>
+                      <p className="text-sm text-muted-foreground">食事区分</p>
                       <select
                         className="text-sm font-medium bg-transparent border-none outline-none"
                         value={pendingResult.meal_type}
@@ -239,7 +239,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
                     <Camera className="w-9 h-9 text-muted-foreground" strokeWidth={1.5} />
                     <div className="text-center">
                       <p className="text-sm font-semibold text-foreground">写真を選択</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">カメラまたはギャラリーから</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">カメラまたはギャラリーから</p>
                     </div>
                   </>
                 )}
@@ -249,7 +249,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
 
             {todayMeals.length > 0 && (
               <div className="space-y-2">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">今日の記録</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">今日の記録</h3>
                 <div className="md:grid md:grid-cols-2 md:gap-2 space-y-2 md:space-y-0">
                   {todayMeals.map((meal) => (
                     <div key={meal.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
@@ -258,7 +258,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{meal.description ?? "食事"}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                           {meal.meal_type ? MEAL_TYPE_LABELS[meal.meal_type] : ""} ·{" "}
                           <span className="text-primary font-semibold">{meal.protein_g}g</span>
                         </p>
@@ -279,7 +279,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
           </TabsContent>
 
           <TabsContent value="history" className="mt-4 space-y-2">
-            <p className="text-xs text-muted-foreground">過去の食事をタップして今日に追加</p>
+            <p className="text-sm text-muted-foreground">過去の食事をタップして今日に追加</p>
             {recentMeals.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">記録がありません</p>
             ) : (
@@ -291,13 +291,13 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{meal.description ?? "食事"}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         <span className="text-primary font-semibold">{meal.protein_g}g</span>
                         {meal.calorie_kcal && ` · ${meal.calorie_kcal}kcal`}
                         {" · "}{new Date(meal.logged_at).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })}
                       </p>
                     </div>
-                    <Button size="sm" variant="outline" className="rounded-lg flex-shrink-0 text-xs" onClick={() => repeatMeal(meal)}>
+                    <Button size="sm" variant="outline" className="rounded-lg flex-shrink-0  text-sm" onClick={() => repeatMeal(meal)}>
                       <Plus className="w-3 h-3 mr-1" />追加
                     </Button>
                   </div>
@@ -336,12 +336,12 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
                   <div key={meal.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold">{meal.name}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         {meal.meal_type ? MEAL_TYPE_LABELS[meal.meal_type] : ""} ·{" "}
                         <span className="text-primary font-semibold">{meal.protein_g}g</span>
                       </p>
                     </div>
-                    <Button size="sm" className="rounded-lg flex-shrink-0 text-xs bg-primary" onClick={() => bulkRegister(meal)}>
+                    <Button size="sm" className="rounded-lg flex-shrink-0 text-sm bg-primary" onClick={() => bulkRegister(meal)}>
                       {bulkDays}日分登録
                     </Button>
                   </div>

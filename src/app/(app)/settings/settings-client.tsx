@@ -88,7 +88,7 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
                 自動計算
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">体重×1.5gでタンパク質目標を自動計算します</p>
+            <p className="text-sm text-muted-foreground">体重×1.5gでタンパク質目標を自動計算します</p>
           </div>
           <div className="space-y-1.5">
             <Label>タンパク質目標 (g/日)</Label>

@@ -108,7 +108,7 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
           <div className="space-y-5">
             {unchecked.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">未購入 ({unchecked.length})</p>
+                <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">未購入 ({unchecked.length})</p>
                 <div className="md:grid md:grid-cols-2 md:gap-2 space-y-1.5 md:space-y-0">
                   {unchecked.map((item) => (
                     <div key={item.id} className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3">
@@ -126,8 +126,8 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
             {checked.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">購入済み ({checked.length})</p>
-                  <button onClick={clearChecked} className="text-xs text-destructive font-medium">クリア</button>
+                  <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">購入済み ({checked.length})</p>
+                  <button onClick={clearChecked} className="text-sm text-destructive font-medium">クリア</button>
                 </div>
                 <div className="md:grid md:grid-cols-2 md:gap-2 space-y-1.5 md:space-y-0">
                   {checked.map((item) => (
