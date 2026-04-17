@@ -44,7 +44,7 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
       .select()
       .single();
     setAdding(false);
-    if (error) { toast.error("追加に失敗しました"); return; }
+    if (error) { toast.error(`追加に失敗しました: ${error.message}`); console.error(error); return; }
     setItems([...items, data as PantryItem]);
     setNewName("");
     toast.success("追加しました");
