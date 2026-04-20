@@ -8,7 +8,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import {
   Button, Badge, Skeleton,
   Card, CardContent, CardHeader, CardTitle,
-  Section,
+  Section, PageHeader,
 } from "@takaki/go-design-system";
 import { Recipe, RecipeIngredient, RecipeStep } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -83,21 +83,18 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
 
   return (
     <div className="flex flex-col">
-      <AppHeader title={recipe.title} backHref="/recipes" />
+      <AppHeader backHref="/recipes" />
 
       {/* Hero image - full bleed */}
       <div className="overflow-hidden">
         <RecipeHeroImage title={recipe.title} />
       </div>
 
-      <div className="px-4 md:px-8 pt-5 pb-8 space-y-6">
-        {/* Title + description */}
-        <div className="space-y-2">
-          <h1 className="text-xl font-bold text-foreground">{recipe.title}</h1>
-          {recipe.description && (
-            <p className="text-sm text-muted-foreground leading-relaxed">{recipe.description}</p>
-          )}
-        </div>
+      <div className="px-4 md:px-8 pt-5 pb-8 space-y-6 max-w-3xl">
+        <PageHeader
+          title={recipe.title}
+          description={recipe.description ?? undefined}
+        />
 
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

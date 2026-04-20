@@ -5,7 +5,7 @@ import { Plus, ImageOff, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Button, Input, Badge, Card, CardContent,
-  TagGroup, Tag, Section,
+  TagGroup, Tag, Section, PageHeader,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { PantryItem } from "@/types/database";
@@ -123,9 +123,14 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
 
   return (
     <div className="flex flex-col">
-      <AppHeader title="食材庫" />
+      <AppHeader />
 
-      <div className="px-4 md:px-8 pt-4 pb-8 space-y-5">
+      <div className="px-4 md:px-8 pt-5 pb-8 space-y-5 max-w-3xl">
+        <PageHeader
+          title="食材庫"
+          description={`在庫あり ${inStockCount}品 · 在庫切れ ${outOfStockCount}品`}
+        />
+
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-3">
           <Card>

@@ -8,7 +8,7 @@ import {
   Button, Input,
   Avatar, AvatarFallback, AvatarImage,
   SettingsGroup, SettingsItem, Separator,
-  SettingsPage, Card, CardContent,
+  SettingsPage, Card, CardContent, PageHeader,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { UserSettings } from "@/types/database";
@@ -56,7 +56,11 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
 
   return (
     <div className="flex flex-col">
-      <AppHeader title="設定" />
+      <AppHeader />
+
+      <div className="px-4 md:px-8 pt-5 max-w-3xl">
+        <PageHeader title="設定" />
+      </div>
 
       <SettingsPage
         title=""

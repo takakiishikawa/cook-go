@@ -53,7 +53,6 @@ export default function RootLayout({
       <head>
         <DarkModeInit />
         <DesignTokens primaryColor="#16A34A" primaryColorHover="#15803D" />
-        <style dangerouslySetInnerHTML={{ __html: `:root{--sidebar-accent:142 76% 94%;--sidebar-accent-foreground:142 72% 22%}.dark{--sidebar-accent:142 30% 16%;--sidebar-accent-foreground:142 50% 72%}` }} />
         <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>

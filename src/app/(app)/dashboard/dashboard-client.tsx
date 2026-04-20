@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Beef, Flame, Target } from "lucide-react";
+import { Beef, Flame, PlusCircle } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { MealLog, Recipe, UserSettings } from "@/types/database";
 import { AppHeader } from "@/components/layout/app-header";
 import { MealSummary } from "@/components/dashboard/meal-summary";
 import { WeeklyChart } from "@/components/dashboard/weekly-chart";
 import { RecipeSuggestionBanner } from "@/components/dashboard/recipe-suggestion-banner";
-import { SectionCards, Button } from "@takaki/go-design-system";
+import { SectionCards, Button, PageHeader } from "@takaki/go-design-system";
 
 interface Props {
   user: User;
@@ -33,25 +33,22 @@ export function DashboardClient({ user, settings, todayMeals, weekMeals, recipes
 
   return (
     <div className="flex flex-col">
-      <AppHeader title="CookGo" showSettings />
+      <AppHeader />
 
-      <div className="px-4 md:px-8 pt-6 pb-8 space-y-6">
-        {/* Greeting */}
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-xl font-bold text-foreground">
-              {greeting}{userName ? `、${userName}さん` : ""}
-            </p>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {today.getMonth() + 1}月{today.getDate()}日（{weekDay}）
-            </p>
-          </div>
-          <Link href="/log">
-            <Button size="sm" className="gap-1.5">
-              食事を記録
-            </Button>
-          </Link>
-        </div>
+      <div className="px-4 md:px-8 pt-5 pb-8 space-y-6 max-w-3xl">
+        {/* Greeting + action */}
+        <PageHeader
+          title={`${greeting}${userName ? `、${userName}さん` : ""}`}
+          description={`${today.getMonth() + 1}月${today.getDate()}日（${weekDay}）`}
+          actions={
+            <Link href="/log">
+              <Button size="sm" className="gap-1.5">
+                <PlusCircle className="w-3.5 h-3.5" />
+                追加
+              </Button>
+            </Link>
+          }
+        />
 
         {/* KPI Cards */}
         <SectionCards
@@ -73,13 +70,6 @@ export function DashboardClient({ user, settings, todayMeals, weekMeals, recipes
               value: totalCalorie > 0 ? `${Math.round(totalCalorie)}kcal` : "—",
               description: "本日の摂取カロリー",
               icon: <Flame className="w-4 h-4" />,
-            },
-            {
-              title: "達成率",
-              value: `${pct}%`,
-              description: "タンパク質目標に対して",
-              progress: pct,
-              icon: <Target className="w-4 h-4" />,
             },
           ]}
         />

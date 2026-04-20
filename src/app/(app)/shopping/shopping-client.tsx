@@ -4,9 +4,12 @@ import { useState } from "react";
 import { Plus, Trash2, ShoppingBag, Globe, ImageOff } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Button, Checkbox, Input, EmptyState,
+  Button, Checkbox, Input, EmptyState, PageHeader,
   Card, CardContent,
   Sheet, SheetContent, SheetHeader, SheetTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   Section, Badge,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
@@ -50,6 +53,7 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
   const [storeMode, setStoreMode] = useState(false);
   const [translations, setTranslations] = useState<Record<string, Translation>>({});
   const [translating, setTranslating] = useState(false);
+  const [pendingPantryItem, setPendingPantryItem] = useState<ShoppingListItem | null>(null);
 
   const unchecked = items.filter(i => !i.checked);
   const checked = items.filter(i => i.checked);
@@ -76,16 +80,18 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
   const toggleItem = async (item: ShoppingListItem) => {
     const { error } = await db.shopping.update(supabase, item.id, { checked: !item.checked });
     if (error) { toast.error("更新に失敗しました"); return; }
-
-    if (!item.checked) {
-      const addToStock = confirm(`「${item.name}」を食材庫に追加しますか？`);
-      if (addToStock) {
-        const itemName = item.name.replace(/\s+\S+$/, "").trim();
-        await db.pantry.upsert(supabase, { user_id: userId, name: itemName, in_stock: true });
-        toast.success(`${itemName}を食材庫に追加しました`);
-      }
-    }
     setItems(items.map(i => i.id === item.id ? { ...i, checked: !i.checked } : i));
+    if (!item.checked) {
+      setPendingPantryItem(item);
+    }
+  };
+
+  const confirmAddToPantry = async () => {
+    if (!pendingPantryItem) return;
+    const itemName = pendingPantryItem.name.replace(/\s+\S+$/, "").trim();
+    await db.pantry.upsert(supabase, { user_id: userId, name: itemName, in_stock: true });
+    toast.success(`${itemName}を食材庫に追加しました`);
+    setPendingPantryItem(null);
   };
 
   const deleteItem = async (id: string) => {
@@ -114,7 +120,23 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
 
   return (
     <div className="flex flex-col">
-      <AppHeader title="買い物リスト" />
+      <AppHeader />
+
+      {/* Pantry add confirm dialog */}
+      <AlertDialog open={!!pendingPantryItem} onOpenChange={(open) => !open && setPendingPantryItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>食材庫に追加しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              「{pendingPantryItem?.name}」を食材庫の在庫に追加します。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>スキップ</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmAddToPantry}>追加する</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Store mode sheet */}
       <Sheet open={storeMode} onOpenChange={setStoreMode}>
@@ -150,7 +172,23 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
         </SheetContent>
       </Sheet>
 
-      <div className="px-4 md:px-8 pt-4 pb-8 space-y-5">
+      <div className="px-4 md:px-8 pt-5 pb-8 space-y-5 max-w-2xl">
+        <PageHeader
+          title="買い物リスト"
+          description={unchecked.length > 0 ? `未購入 ${unchecked.length}品` : checked.length > 0 ? "すべて購入済み" : undefined}
+          actions={unchecked.length > 0 ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setStoreMode(true); fetchTranslations(unchecked); }}
+              className="gap-1.5"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              店員に見せる
+            </Button>
+          ) : undefined}
+        />
+
         {/* Add item */}
         <div className="flex gap-2">
           <Input
@@ -164,17 +202,6 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
             <Plus className="w-4 h-4" />
           </Button>
         </div>
-
-        {unchecked.length > 0 && (
-          <Button
-            variant="outline"
-            onClick={() => { setStoreMode(true); fetchTranslations(unchecked); }}
-            className="w-full gap-2"
-          >
-            <Globe className="w-4 h-4" />
-            店員に見せる（日・English・Tiếng Việt）
-          </Button>
-        )}
 
         {items.length === 0 ? (
           <EmptyState

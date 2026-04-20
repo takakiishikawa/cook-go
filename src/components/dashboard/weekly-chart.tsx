@@ -15,8 +15,9 @@ export function WeeklyChart({ weekMeals, target }: WeeklyChartProps) {
     const dayMeals = weekMeals.filter((m) => m.logged_at.startsWith(dateStr));
     const protein = dayMeals.reduce((sum, m) => sum + Number(m.protein_g), 0);
     const calorie = dayMeals.reduce((sum, m) => sum + Number(m.calorie_kcal ?? 0), 0);
+    const dow = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
     return {
-      day: ["日", "月", "火", "水", "木", "金", "土"][d.getDay()],
+      day: `${d.getMonth() + 1}/${d.getDate()}(${dow})`,
       protein: Math.round(protein),
       calorie: Math.round(calorie),
     };

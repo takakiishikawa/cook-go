@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Clock, RefreshCw, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Button, Badge, EmptyState, Card, CardContent, Skeleton,
+  Button, Badge, EmptyState, Card, CardContent, Skeleton, PageHeader,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { Recipe } from "@/types/database";
@@ -61,17 +61,24 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
 
   return (
     <div className="flex flex-col">
-      <AppHeader title="レシピ" />
+      <AppHeader />
 
-      <div className="px-4 md:px-8 pt-4 pb-8 space-y-5">
-        <Button
-          onClick={generateRecipes}
-          disabled={generating}
-          className="w-full h-12 gap-2 text-base"
-        >
-          <RefreshCw className={`w-4 h-4 ${generating ? "animate-spin" : ""}`} />
-          {generating ? "AIがレシピを考えています..." : "今週のレシピを提案してもらう"}
-        </Button>
+      <div className="px-4 md:px-8 pt-5 pb-8 space-y-5 max-w-3xl">
+        <PageHeader
+          title="レシピ"
+          description={recipes.length > 0 ? `${recipes.length}件` : "AIが食材庫に合わせて提案します"}
+          actions={
+            <Button
+              onClick={generateRecipes}
+              disabled={generating}
+              size="sm"
+              className="gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${generating ? "animate-spin" : ""}`} />
+              {generating ? "提案中..." : "提案してもらう"}
+            </Button>
+          }
+        />
 
         {recipes.length === 0 ? (
           <EmptyState

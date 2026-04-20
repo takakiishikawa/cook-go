@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Home, BookOpen, ShoppingCart, Archive, Settings, PlusCircle, LogOut, Leaf, ChevronsUpDown, Check, Sun, Moon } from "lucide-react";
+import { Home, BookOpen, ShoppingCart, Archive, Settings, PlusCircle, LogOut, Leaf, ChevronsUpDown, Check, Sun, Moon, FileText } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -35,13 +35,14 @@ const GO_APPS = [
 
 const navItems = [
   { href: "/dashboard", icon: Home, label: "ホーム" },
-  { href: "/log", icon: PlusCircle, label: "食事記録" },
+  { href: "/log", icon: PlusCircle, label: "食事ログ" },
   { href: "/recipes", icon: BookOpen, label: "レシピ" },
   { href: "/shopping", icon: ShoppingCart, label: "買い物リスト" },
   { href: "/pantry", icon: Archive, label: "食材庫" },
 ];
 
 const footerItems = [
+  { href: "/concept", icon: FileText, label: "コンセプト" },
   { href: "/settings", icon: Settings, label: "設定" },
 ];
 

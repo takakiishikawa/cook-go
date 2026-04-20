@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Camera, Plus, Trash2, Edit2, RefreshCw, CalendarRange, Link2, Utensils } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Button, Input,
+  Button, Input, PageHeader,
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
   Tabs, TabsContent, TabsList, TabsTrigger,
   Card, CardContent, Section, Badge,
@@ -144,36 +144,24 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
 
   return (
     <div className="flex flex-col">
-      <AppHeader title="食事記録" />
+      <AppHeader />
 
-      {/* Today summary */}
-      {todayMeals.length > 0 && (
-        <div className="px-4 md:px-8 pt-4">
-          <div className="flex items-center gap-4 bg-primary/5 border border-primary/20 rounded-md px-4 py-3">
-            <Utensils className="w-5 h-5 text-primary flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">今日の合計</p>
-              <p className="text-xs text-muted-foreground">{todayMeals.length}品</p>
-            </div>
-            <div className="text-right">
-              <p className="text-lg font-bold text-primary">{Math.round(totalProtein)}g</p>
-              <p className="text-xs text-muted-foreground">タンパク質</p>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="px-4 md:px-8 pt-5 pb-8 space-y-5 max-w-3xl">
+        <PageHeader
+          title="食事ログ"
+          description={todayMeals.length > 0 ? `今日 ${todayMeals.length}品・タンパク質 ${Math.round(totalProtein)}g` : "今日の食事を記録しましょう"}
+        />
 
-      <div className="px-4 md:px-8 pb-4">
-        <Tabs defaultValue="camera" className="mt-4">
-          <TabsList className="w-full">
-            <TabsTrigger value="camera" className="flex-1 gap-1.5">
-              <Camera className="w-3.5 h-3.5" />写真
+        <Tabs defaultValue="camera">
+          <TabsList>
+            <TabsTrigger value="camera" className="gap-1.5">
+              <Camera className="w-3.5 h-3.5" />写真で追加
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex-1 gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5" />履歴
+            <TabsTrigger value="history" className="gap-1.5">
+              <RefreshCw className="w-3.5 h-3.5" />履歴から
             </TabsTrigger>
-            <TabsTrigger value="bulk" className="flex-1 gap-1.5">
-              <CalendarRange className="w-3.5 h-3.5" />まとめて
+            <TabsTrigger value="bulk" className="gap-1.5">
+              <CalendarRange className="w-3.5 h-3.5" />まとめて登録
             </TabsTrigger>
           </TabsList>
 
