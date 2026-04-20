@@ -169,7 +169,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
 
       <div className="px-4 md:px-8">
         <Tabs defaultValue="camera" className="mt-3">
-          <TabsList variant="underline" className="w-full">
+          <TabsList className="w-full">
             <TabsTrigger value="camera" className="flex-1 gap-1.5">
               <Camera className="w-3.5 h-3.5" />写真
             </TabsTrigger>
