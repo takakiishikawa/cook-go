@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_JP } from "next/font/google";
-import { Toaster } from "@/components/ui/sonner";
+import { DesignTokens, Toaster } from "@takaki/go-design-system";
 import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
@@ -12,7 +12,7 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#10b981",
+  themeColor: "#16A34A",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -47,8 +47,10 @@ export default function RootLayout({
     <html
       lang="ja"
       className={`${notoSansJP.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <head>
+        <DesignTokens primaryColor="#16A34A" primaryColorHover="#15803D" />
         <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
