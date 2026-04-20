@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { db } from "@/lib/db";
 import { LogClient } from "./log-client";
 
 export default async function LogPage() {
@@ -9,37 +10,18 @@ export default async function LogPage() {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [todayMealsResult, recentMealsResult, recurringResult] = await Promise.all([
-    supabase
-      .schema("cookgo")
-      .from("meal_logs")
-      .select("*")
-      .eq("user_id", user.id)
-      .gte("logged_at", `${today}T00:00:00`)
-      .lte("logged_at", `${today}T23:59:59`)
-      .order("logged_at", { ascending: false }),
-    supabase
-      .schema("cookgo")
-      .from("meal_logs")
-      .select("*")
-      .eq("user_id", user.id)
-      .lt("logged_at", `${today}T00:00:00`)
-      .order("logged_at", { ascending: false })
-      .limit(10),
-    supabase
-      .schema("cookgo")
-      .from("recurring_meals")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false }),
+  const [todayMeals, recentMeals, recurringMeals] = await Promise.all([
+    db.meals.getToday(supabase, user.id, today),
+    db.meals.getRecent(supabase, user.id, today),
+    db.recurring.getAll(supabase, user.id),
   ]);
 
   return (
     <LogClient
       userId={user.id}
-      todayMeals={todayMealsResult.data ?? []}
-      recentMeals={recentMealsResult.data ?? []}
-      recurringMeals={recurringResult.data ?? []}
+      todayMeals={todayMeals}
+      recentMeals={recentMeals}
+      recurringMeals={recurringMeals}
     />
   );
 }

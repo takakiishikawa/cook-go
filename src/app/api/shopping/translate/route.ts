@@ -1,17 +1,20 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
+import { CLAUDE_HAIKU } from "@/lib/constants";
+import type { TranslateRequest, TranslateResponse } from "@/types/api";
 
 const client = new Anthropic();
 
 export async function POST(request: Request) {
-  const { names } = await request.json();
+  const body: TranslateRequest = await request.json();
+  const { names } = body;
   if (!Array.isArray(names) || names.length === 0) {
-    return NextResponse.json({ translations: {} });
+    return NextResponse.json({ translations: {} } satisfies TranslateResponse);
   }
 
   try {
     const response = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
+      model: CLAUDE_HAIKU,
       max_tokens: 1024,
       messages: [
         {
@@ -28,11 +31,17 @@ ${names.map((n: string) => `- ${n}`).join("\n")}`,
 
     const text = response.content[0].type === "text" ? response.content[0].text : "{}";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return NextResponse.json({ translations: {} });
+    if (!jsonMatch) return NextResponse.json({ translations: {} } satisfies TranslateResponse);
 
-    const translations = JSON.parse(jsonMatch[0]);
-    return NextResponse.json({ translations });
+    let translations: TranslateResponse["translations"];
+    try {
+      translations = JSON.parse(jsonMatch[0]) as TranslateResponse["translations"];
+    } catch {
+      return NextResponse.json({ translations: {} } satisfies TranslateResponse);
+    }
+
+    return NextResponse.json({ translations } satisfies TranslateResponse);
   } catch {
-    return NextResponse.json({ translations: {} });
+    return NextResponse.json({ translations: {} } satisfies TranslateResponse);
   }
 }

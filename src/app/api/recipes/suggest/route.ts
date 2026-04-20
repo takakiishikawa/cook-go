@@ -1,10 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { DB_SCHEMA, CLAUDE_SONNET } from "@/lib/constants";
+import type { SuggestedRecipe, RecipeSuggestClaudeResponse } from "@/types/api";
 
 const client = new Anthropic();
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -14,14 +16,17 @@ export async function POST(request: Request) {
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
     const [mealsResult, pantryResult, pastRecipesResult, settingsResult] = await Promise.all([
-      supabase.schema("cookgo").from("meal_logs").select("description, protein_g, logged_at, meal_type")
+      supabase.schema(DB_SCHEMA).from("meal_logs")
+        .select("description, protein_g, logged_at, meal_type")
         .eq("user_id", user.id).gte("logged_at", oneWeekAgo.toISOString()),
-      supabase.schema("cookgo").from("pantry_items").select("name, category, in_stock")
+      supabase.schema(DB_SCHEMA).from("pantry_items")
+        .select("name, category, in_stock")
         .eq("user_id", user.id).eq("in_stock", true),
-      supabase.schema("cookgo").from("recipes").select("title").eq("user_id", user.id)
+      supabase.schema(DB_SCHEMA).from("recipes")
+        .select("title").eq("user_id", user.id)
         .order("created_at", { ascending: false }).limit(20),
-      supabase.schema("cookgo").from("user_settings").select("protein_target_g")
-        .eq("user_id", user.id).single(),
+      supabase.schema(DB_SCHEMA).from("user_settings")
+        .select("protein_target_g").eq("user_id", user.id).single(),
     ]);
 
     const meals = mealsResult.data ?? [];
@@ -77,29 +82,24 @@ ${pastRecipes.map(r => r.title).join(", ") || "なし"}
 }`;
 
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: CLAUDE_SONNET,
       max_tokens: 4096,
       messages: [{ role: "user", content: prompt }],
     });
 
     const text = response.content[0].type === "text" ? response.content[0].text : "";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Failed to parse response");
+    if (!jsonMatch) throw new Error("No JSON in response");
 
-    const { recipes } = JSON.parse(jsonMatch[0]);
+    let parsed: RecipeSuggestClaudeResponse;
+    try {
+      parsed = JSON.parse(jsonMatch[0]) as RecipeSuggestClaudeResponse;
+    } catch {
+      throw new Error("Invalid JSON in response");
+    }
 
     const pantryNames = new Set(pantryItems.map(p => p.name.toLowerCase()));
-    const recipesWithPantry = recipes.map((r: Record<string, unknown>) => ({
-      ...r,
-      ingredients: Array.isArray(r.ingredients)
-        ? (r.ingredients as Array<{name: string; amount: string; in_pantry?: boolean}>).map((ing) => ({
-            ...ing,
-            in_pantry: pantryNames.has(ing.name.toLowerCase()),
-          }))
-        : r.ingredients,
-    }));
-
-    const inserts = recipesWithPantry.map((r: Record<string, unknown>) => ({
+    const inserts = parsed.recipes.map((r: SuggestedRecipe) => ({
       user_id: user.id,
       title: r.title,
       description: r.description,
@@ -108,13 +108,16 @@ ${pastRecipes.map(r => r.title).join(", ") || "なし"}
       prep_time_min: r.prep_time_min,
       is_meal_prep_friendly: r.is_meal_prep_friendly ?? true,
       servings: r.servings ?? 1,
-      ingredients: r.ingredients,
+      ingredients: r.ingredients.map(ing => ({
+        ...ing,
+        in_pantry: pantryNames.has(ing.name.toLowerCase()),
+      })),
       steps: r.steps,
       ai_generated: true,
     }));
 
     const { data: savedRecipes, error } = await supabase
-      .schema("cookgo")
+      .schema(DB_SCHEMA)
       .from("recipes")
       .insert(inserts)
       .select();

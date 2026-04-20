@@ -13,9 +13,11 @@ import {
 import { AppHeader } from "@/components/layout/app-header";
 import { MealLog, MealType, MEAL_TYPE_LABELS, RecurringMeal } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
+import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { MealEditDialog } from "@/components/log/meal-edit-dialog";
 import { RecurringMealDialog } from "@/components/log/recurring-meal-dialog";
+import type { MealAnalysisResponse } from "@/types/api";
 
 interface LogClientProps {
   userId: string;
@@ -24,12 +26,13 @@ interface LogClientProps {
   recurringMeals: RecurringMeal[];
 }
 
-type AnalysisResult = {
-  description: string;
-  protein_g: number;
-  calorie_kcal: number;
-  meal_type: MealType;
-};
+function getCurrentMealType(): MealType {
+  const h = new Date().getHours();
+  if (h < 10) return "breakfast";
+  if (h < 14) return "lunch";
+  if (h < 20) return "dinner";
+  return "snack";
+}
 
 export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, recurringMeals }: LogClientProps) {
   const router = useRouter();
@@ -38,20 +41,12 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
 
   const [todayMeals, setTodayMeals] = useState<MealLog[]>(initialTodayMeals);
   const [analyzing, setAnalyzing] = useState(false);
-  const [pendingResult, setPendingResult] = useState<AnalysisResult | null>(null);
+  const [pendingResult, setPendingResult] = useState<MealAnalysisResponse | null>(null);
   const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
   const [recipeUrl, setRecipeUrl] = useState("");
   const [editingMeal, setEditingMeal] = useState<MealLog | null>(null);
   const [saving, setSaving] = useState(false);
   const [bulkDays, setBulkDays] = useState(5);
-
-  const getCurrentMealType = (): MealType => {
-    const h = new Date().getHours();
-    if (h < 10) return "breakfast";
-    if (h < 14) return "lunch";
-    if (h < 20) return "dinner";
-    return "snack";
-  };
 
   const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -68,7 +63,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image_base64: base64, meal_type: getCurrentMealType(), recipe_url: recipeUrl.trim() || undefined }),
         });
-        const data = await res.json();
+        const data: MealAnalysisResponse & { error?: string } = await res.json();
         if (data.error) throw new Error(data.error);
         setPendingResult({ ...data, meal_type: data.meal_type ?? getCurrentMealType() });
       } catch {
@@ -84,19 +79,14 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
   const saveMeal = async () => {
     if (!pendingResult) return;
     setSaving(true);
-    const { error, data } = await supabase
-      .schema("cookgo")
-      .from("meal_logs")
-      .insert({
-        user_id: userId,
-        meal_type: pendingResult.meal_type,
-        description: pendingResult.description,
-        protein_g: pendingResult.protein_g,
-        calorie_kcal: pendingResult.calorie_kcal,
-        photo_url: pendingImageUrl,
-      })
-      .select()
-      .single();
+    const { error, data } = await db.meals.insert(supabase, {
+      user_id: userId,
+      meal_type: pendingResult.meal_type as MealType,
+      description: pendingResult.description,
+      protein_g: pendingResult.protein_g,
+      calorie_kcal: pendingResult.calorie_kcal,
+      photo_url: pendingImageUrl,
+    });
     setSaving(false);
     if (error) { toast.error("保存に失敗しました"); return; }
     setTodayMeals([data as MealLog, ...todayMeals]);
@@ -107,20 +97,15 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
   };
 
   const repeatMeal = async (meal: MealLog) => {
-    const { error, data } = await supabase
-      .schema("cookgo")
-      .from("meal_logs")
-      .insert({
-        user_id: userId,
-        meal_type: getCurrentMealType(),
-        description: meal.description,
-        protein_g: meal.protein_g,
-        calorie_kcal: meal.calorie_kcal,
-        is_repeat: true,
-        source_meal_id: meal.id,
-      })
-      .select()
-      .single();
+    const { error, data } = await db.meals.insert(supabase, {
+      user_id: userId,
+      meal_type: getCurrentMealType(),
+      description: meal.description ?? undefined,
+      protein_g: meal.protein_g,
+      calorie_kcal: meal.calorie_kcal,
+      is_repeat: true,
+      source_meal_id: meal.id,
+    });
     if (error) { toast.error("登録に失敗しました"); return; }
     setTodayMeals([data as MealLog, ...todayMeals]);
     toast.success("今日の食事に追加しました");
@@ -128,7 +113,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
   };
 
   const deleteMeal = async (id: string) => {
-    const { error } = await supabase.schema("cookgo").from("meal_logs").delete().eq("id", id);
+    const { error } = await db.meals.delete(supabase, id);
     if (error) { toast.error("削除に失敗しました"); return; }
     setTodayMeals(todayMeals.filter((m) => m.id !== id));
     toast.success("削除しました");
@@ -136,21 +121,20 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
 
   const bulkRegister = async (recurring: RecurringMeal) => {
     const today = new Date();
-    const inserts = Array.from({ length: bulkDays }, (_: unknown, i: number) => {
+    const inserts = Array.from({ length: bulkDays }, (_, i) => {
       const d = new Date(today);
       d.setDate(d.getDate() + i);
-      const dateStr = d.toISOString().split("T")[0];
       return {
         user_id: userId,
-        meal_type: recurring.meal_type,
+        meal_type: recurring.meal_type ?? getCurrentMealType(),
         description: recurring.name,
         protein_g: recurring.protein_g,
         calorie_kcal: recurring.calorie_kcal,
         is_repeat: true,
-        logged_at: `${dateStr}T12:00:00`,
+        logged_at: `${d.toISOString().split("T")[0]}T12:00:00`,
       };
     });
-    const { error } = await supabase.schema("cookgo").from("meal_logs").insert(inserts);
+    const { error } = await db.meals.insertMany(supabase, inserts);
     if (error) { toast.error("一括登録に失敗しました"); return; }
     toast.success(`${bulkDays}日分を登録しました`);
     router.refresh();

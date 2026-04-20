@@ -10,6 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { MealType, MEAL_TYPE_LABELS } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
+import { db } from "@/lib/db";
+
+const MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
 interface RecurringMealDialogProps {
   userId: string;
@@ -28,7 +31,7 @@ export function RecurringMealDialog({ userId, onSaved }: RecurringMealDialogProp
   const handleSave = async () => {
     if (!name || !proteinG) { toast.error("名前とタンパク質量を入力してください"); return; }
     setSaving(true);
-    const { error } = await supabase.schema("cookgo").from("recurring_meals").insert({
+    const { error } = await db.recurring.insert(supabase, {
       user_id: userId,
       name,
       meal_type: mealType,
@@ -52,21 +55,25 @@ export function RecurringMealDialog({ userId, onSaved }: RecurringMealDialogProp
       </DialogTrigger>
       <DialogContent className="rounded-xl mx-4">
         <DialogHeader>
-          <DialogTitle className="font-heading">定期メニューを追加</DialogTitle>
+          <DialogTitle>定期メニューを追加</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>メニュー名</Label>
-            <Input placeholder="例: 鶏胸肉+白米セット" value={name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)} className="rounded-xl" />
+            <Input
+              placeholder="例: 鶏胸肉+白米セット"
+              value={name}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>食事区分</Label>
             <Select value={mealType} onValueChange={(v: string | null) => v && setMealType(v as MealType)}>
-              <SelectTrigger className="rounded-xl">
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(["breakfast", "lunch", "dinner", "snack"] as MealType[]).map((t) => (
+                {MEAL_TYPES.map((t) => (
                   <SelectItem key={t} value={t}>{MEAL_TYPE_LABELS[t]}</SelectItem>
                 ))}
               </SelectContent>
@@ -75,16 +82,24 @@ export function RecurringMealDialog({ userId, onSaved }: RecurringMealDialogProp
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>タンパク質 (g)</Label>
-              <Input type="number" value={proteinG} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProteinG(e.target.value)} className="rounded-xl" />
+              <Input
+                type="number"
+                value={proteinG}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProteinG(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>カロリー (kcal)</Label>
-              <Input type="number" value={calorieKcal} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCalorieKcal(e.target.value)} className="rounded-xl" />
+              <Input
+                type="number"
+                value={calorieKcal}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCalorieKcal(e.target.value)}
+              />
             </div>
           </div>
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setOpen(false)}>キャンセル</Button>
-            <Button className="flex-1 rounded-xl bg-primary" onClick={handleSave} disabled={saving}>
+            <Button variant="outline" className="flex-1" onClick={() => setOpen(false)}>キャンセル</Button>
+            <Button className="flex-1" onClick={handleSave} disabled={saving}>
               {saving ? "保存中..." : "追加する"}
             </Button>
           </div>

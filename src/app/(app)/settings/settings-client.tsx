@@ -13,6 +13,7 @@ import {
 import { AppHeader } from "@/components/layout/app-header";
 import { UserSettings } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
+import { db } from "@/lib/db";
 
 interface SettingsClientProps {
   userId: string;
@@ -31,15 +32,12 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
 
   const handleSave = async () => {
     setSaving(true);
-    const { error } = await supabase
-      .schema("cookgo")
-      .from("user_settings")
-      .upsert({
-        user_id: userId,
-        protein_target_g: parseInt(proteinTarget),
-        weight_kg: weightKg ? parseFloat(weightKg) : null,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "user_id" });
+    const { error } = await db.settings.upsert(supabase, {
+      user_id: userId,
+      protein_target_g: parseInt(proteinTarget),
+      weight_kg: weightKg ? parseFloat(weightKg) : null,
+      updated_at: new Date().toISOString(),
+    });
     setSaving(false);
     if (error) { toast.error("保存に失敗しました"); return; }
     toast.success("設定を保存しました");

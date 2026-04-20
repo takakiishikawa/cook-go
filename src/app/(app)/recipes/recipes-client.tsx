@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Clock, RefreshCw, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
@@ -10,21 +10,11 @@ import {
 import { AppHeader } from "@/components/layout/app-header";
 import { Recipe } from "@/types/database";
 import { useRouter } from "next/navigation";
+import { useFoodImage } from "@/hooks/use-food-image";
 
 function RecipeImage({ title }: { title: string }) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    const query = title.split(/[のとでや]/)[0].trim() || title;
-    fetch(`/api/pantry/image?name=${encodeURIComponent(query)}`)
-      .then(r => r.json())
-      .then(d => { if (!cancelled) { setImageUrl(d.imageUrl ?? null); setLoading(false); } })
-      .catch(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [title]);
+  const query = title.split(/[のとでや]/)[0].trim() || title;
+  const { imageUrl, loading, error } = useFoodImage(query);
 
   if (loading) {
     return <Skeleton className="w-full h-40" />;
@@ -41,7 +31,6 @@ function RecipeImage({ title }: { title: string }) {
       src={imageUrl}
       alt={title}
       className="w-full h-40 object-cover bg-muted"
-      onError={() => setError(true)}
     />
   );
 }

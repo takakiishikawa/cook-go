@@ -1,52 +1,36 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { PANTRY_CATEGORIES } from "@/types/database";
+import { WIKI_USER_AGENT, CLAUDE_HAIKU } from "@/lib/constants";
+import type { FoodSuggestResponse } from "@/types/api";
 
 const client = new Anthropic();
+const WIKI_CACHE = { next: { revalidate: 86400 } } as const;
+
+interface WikiPage {
+  thumbnail?: { source: string };
+}
 
 async function fetchWikipediaImage(name: string): Promise<string | null> {
   try {
-    // Search for the ingredient to get the correct page title
     const searchRes = await fetch(
       `https://ja.wikipedia.org/w/api.php?` +
-        new URLSearchParams({
-          action: "query",
-          list: "search",
-          srsearch: name,
-          format: "json",
-          srlimit: "1",
-          origin: "*",
-        }),
-      {
-        headers: { "User-Agent": "CookGo/1.0 (https://cook-go-lovat.vercel.app)" },
-        next: { revalidate: 86400 },
-      }
+        new URLSearchParams({ action: "query", list: "search", srsearch: name, format: "json", srlimit: "1", origin: "*" }),
+      { headers: { "User-Agent": WIKI_USER_AGENT }, ...WIKI_CACHE },
     );
     if (!searchRes.ok) return null;
-    const searchData = await searchRes.json();
-    const pageTitle: string | undefined = searchData.query?.search?.[0]?.title;
+    const searchData = await searchRes.json() as { query?: { search?: Array<{ title: string }> } };
+    const pageTitle = searchData.query?.search?.[0]?.title;
     if (!pageTitle) return null;
 
-    // Fetch image for the found page
     const imgRes = await fetch(
       `https://ja.wikipedia.org/w/api.php?` +
-        new URLSearchParams({
-          action: "query",
-          titles: pageTitle,
-          prop: "pageimages",
-          format: "json",
-          pithumbsize: "200",
-          origin: "*",
-        }),
-      {
-        headers: { "User-Agent": "CookGo/1.0" },
-        next: { revalidate: 86400 },
-      }
+        new URLSearchParams({ action: "query", titles: pageTitle, prop: "pageimages", format: "json", pithumbsize: "200", origin: "*" }),
+      { headers: { "User-Agent": WIKI_USER_AGENT }, ...WIKI_CACHE },
     );
     if (!imgRes.ok) return null;
-    const imgData = await imgRes.json();
-    const pages = imgData.query?.pages ?? {};
-    const page = Object.values(pages)[0] as { thumbnail?: { source: string } };
+    const imgData = await imgRes.json() as { query?: { pages?: Record<string, WikiPage> } };
+    const page = Object.values(imgData.query?.pages ?? {})[0];
     return page?.thumbnail?.source ?? null;
   } catch {
     return null;
@@ -56,12 +40,14 @@ async function fetchWikipediaImage(name: string): Promise<string | null> {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const name = searchParams.get("name");
-  if (!name?.trim()) return NextResponse.json({ imageUrl: null, category: "その他" });
+  if (!name?.trim()) {
+    return NextResponse.json({ imageUrl: null, category: "その他" } satisfies FoodSuggestResponse);
+  }
 
   const [imageUrl, categoryResponse] = await Promise.all([
     fetchWikipediaImage(name),
     client.messages.create({
-      model: "claude-haiku-4-5-20251001",
+      model: CLAUDE_HAIKU,
       max_tokens: 20,
       messages: [
         {
@@ -74,14 +60,13 @@ export async function GET(request: Request) {
 
   let category = "その他";
   if (categoryResponse) {
-    const text =
-      categoryResponse.content[0].type === "text"
-        ? categoryResponse.content[0].text.trim()
-        : "";
+    const text = categoryResponse.content[0].type === "text"
+      ? categoryResponse.content[0].text.trim()
+      : "";
     if ((PANTRY_CATEGORIES as readonly string[]).includes(text)) {
       category = text;
     }
   }
 
-  return NextResponse.json({ imageUrl, category });
+  return NextResponse.json({ imageUrl, category } satisfies FoodSuggestResponse);
 }

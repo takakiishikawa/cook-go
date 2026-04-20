@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, Clock, Check, X, Play, UtensilsCrossed, Users, Flame, Beef } from "lucide-react";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import {
 } from "@takaki/go-design-system";
 import { Recipe, RecipeIngredient, RecipeStep } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { useFoodImage } from "@/hooks/use-food-image";
 
 interface RecipeDetailClientProps {
   recipe: Recipe;
@@ -19,16 +20,8 @@ interface RecipeDetailClientProps {
 }
 
 function RecipeHeroImage({ title }: { title: string }) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const query = title.split(/[のとでや]/)[0].trim() || title;
-    fetch(`/api/pantry/image?name=${encodeURIComponent(query)}`)
-      .then(r => r.json())
-      .then(d => { setImageUrl(d.imageUrl ?? null); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [title]);
+  const query = title.split(/[のとでや]/)[0].trim() || title;
+  const { imageUrl, loading } = useFoodImage(query);
 
   if (loading) return <Skeleton className="w-full h-56" />;
   if (!imageUrl) {

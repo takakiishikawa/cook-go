@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { db } from "@/lib/db";
 import { SettingsClient } from "./settings-client";
 
 export default async function SettingsPage() {
@@ -7,12 +8,7 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  const { data: settings } = await supabase
-    .schema("cookgo")
-    .from("user_settings")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
+  const settings = await db.settings.get(supabase, user.id);
 
   return (
     <SettingsClient

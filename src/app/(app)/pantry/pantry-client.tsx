@@ -10,6 +10,7 @@ import {
 import { AppHeader } from "@/components/layout/app-header";
 import { PantryItem } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
+import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 
 interface PantryClientProps {
@@ -72,22 +73,14 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
   }, [newName]);
 
   const toggleStock = async (item: PantryItem) => {
-    const { error } = await supabase
-      .schema("cookgo")
-      .from("pantry_items")
-      .update({ in_stock: !item.in_stock })
-      .eq("id", item.id);
+    const { error } = await db.pantry.update(supabase, item.id, { in_stock: !item.in_stock });
     if (error) { toast.error("更新に失敗しました"); return; }
     setItems(items.map(i => i.id === item.id ? { ...i, in_stock: !i.in_stock } : i));
   };
 
   const deleteItem = async (item: PantryItem) => {
     setDeletingId(item.id);
-    const { error } = await supabase
-      .schema("cookgo")
-      .from("pantry_items")
-      .delete()
-      .eq("id", item.id);
+    const { error } = await db.pantry.delete(supabase, item.id);
     setDeletingId(null);
     if (error) { toast.error("削除に失敗しました"); return; }
     setItems(items.filter(i => i.id !== item.id));
@@ -97,18 +90,13 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
   const addItem = async () => {
     if (!newName.trim()) return;
     setAdding(true);
-    const { error, data } = await supabase
-      .schema("cookgo")
-      .from("pantry_items")
-      .insert({
-        user_id: userId,
-        name: newName.trim(),
-        category: suggestedCategory,
-        in_stock: true,
-        image_url: previewImageUrl,
-      })
-      .select()
-      .single();
+    const { error, data } = await db.pantry.insert(supabase, {
+      user_id: userId,
+      name: newName.trim(),
+      category: suggestedCategory,
+      in_stock: true,
+      image_url: previewImageUrl,
+    });
     setAdding(false);
     if (error) { toast.error(`追加に失敗しました: ${error.message}`); return; }
     setItems([...items, data as PantryItem]);

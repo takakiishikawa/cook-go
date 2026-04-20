@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { db } from "@/lib/db";
 import { PantryClient } from "./pantry-client";
 
 const PRESET_ITEMS = [
@@ -26,36 +27,22 @@ const PRESET_ITEMS = [
   { name: "ごま油", category: "調味料" },
   { name: "魚醤（ヌックマム）", category: "調味料" },
   { name: "オイスターソース", category: "調味料" },
-];
+] as const;
 
 export default async function PantryPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  const { data: existingItems } = await supabase
-    .schema("cookgo")
-    .from("pantry_items")
-    .select("name")
-    .eq("user_id", user.id);
-
-  if (!existingItems || existingItems.length === 0) {
-    const inserts = PRESET_ITEMS.map(item => ({
-      user_id: user.id,
-      name: item.name,
-      category: item.category,
-      in_stock: false,
-    }));
-    await supabase.schema("cookgo").from("pantry_items").insert(inserts);
+  const count = await db.pantry.count(supabase, user.id);
+  if (count === 0) {
+    await db.pantry.insertMany(
+      supabase,
+      PRESET_ITEMS.map(item => ({ user_id: user.id, ...item, in_stock: false })),
+    );
   }
 
-  const { data: items } = await supabase
-    .schema("cookgo")
-    .from("pantry_items")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("category")
-    .order("name");
+  const items = await db.pantry.getAll(supabase, user.id);
 
-  return <PantryClient userId={user.id} items={items ?? []} />;
+  return <PantryClient userId={user.id} items={items} />;
 }

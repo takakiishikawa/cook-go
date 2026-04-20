@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Trash2, ShoppingBag, Globe, ImageOff, Check } from "lucide-react";
+import { useState } from "react";
+import { Plus, Trash2, ShoppingBag, Globe, ImageOff } from "lucide-react";
 import { toast } from "sonner";
 import {
   Button, Checkbox, Input, EmptyState,
@@ -12,6 +12,9 @@ import {
 import { AppHeader } from "@/components/layout/app-header";
 import { ShoppingListItem } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
+import { db } from "@/lib/db";
+import { useFoodImage } from "@/hooks/use-food-image";
+import type { TranslateResponse } from "@/types/api";
 import { cn } from "@/lib/utils";
 
 interface ShoppingClientProps {
@@ -22,18 +25,7 @@ interface ShoppingClientProps {
 type Translation = { en: string; vi: string };
 
 function ItemImage({ name }: { name: string }) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`/api/pantry/image?name=${encodeURIComponent(name)}`)
-      .then(r => r.json())
-      .then(d => { if (!cancelled) setImageUrl(d.imageUrl ?? null); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [name]);
-
+  const { imageUrl, error } = useFoodImage(name);
   if (!imageUrl || error) {
     return (
       <div className="w-10 h-10 rounded-md bg-surface-subtle flex items-center justify-center flex-shrink-0">
@@ -46,7 +38,6 @@ function ItemImage({ name }: { name: string }) {
       src={imageUrl}
       alt={name}
       className="w-10 h-10 rounded-md object-cover flex-shrink-0 bg-muted"
-      onError={() => setError(true)}
     />
   );
 }
@@ -83,22 +74,14 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
   };
 
   const toggleItem = async (item: ShoppingListItem) => {
-    const { error } = await supabase
-      .schema("cookgo")
-      .from("shopping_list_items")
-      .update({ checked: !item.checked })
-      .eq("id", item.id);
+    const { error } = await db.shopping.update(supabase, item.id, { checked: !item.checked });
     if (error) { toast.error("更新に失敗しました"); return; }
 
     if (!item.checked) {
       const addToStock = confirm(`「${item.name}」を食材庫に追加しますか？`);
       if (addToStock) {
         const itemName = item.name.replace(/\s+\S+$/, "").trim();
-        await supabase.schema("cookgo").from("pantry_items").upsert({
-          user_id: userId,
-          name: itemName,
-          in_stock: true,
-        }, { onConflict: "user_id,name" });
+        await db.pantry.upsert(supabase, { user_id: userId, name: itemName, in_stock: true });
         toast.success(`${itemName}を食材庫に追加しました`);
       }
     }
@@ -106,14 +89,14 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
   };
 
   const deleteItem = async (id: string) => {
-    const { error } = await supabase.schema("cookgo").from("shopping_list_items").delete().eq("id", id);
+    const { error } = await db.shopping.delete(supabase, id);
     if (error) { toast.error("削除に失敗しました"); return; }
     setItems(items.filter(i => i.id !== id));
   };
 
   const clearChecked = async () => {
     const ids = checked.map(i => i.id);
-    const { error } = await supabase.schema("cookgo").from("shopping_list_items").delete().in("id", ids);
+    const { error } = await db.shopping.deleteMany(supabase, ids);
     if (error) { toast.error("削除に失敗しました"); return; }
     setItems(unchecked);
     toast.success(`${ids.length}件を削除しました`);
@@ -122,12 +105,7 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
   const addItem = async () => {
     if (!newItemName.trim()) return;
     setAdding(true);
-    const { error, data } = await supabase
-      .schema("cookgo")
-      .from("shopping_list_items")
-      .insert({ user_id: userId, name: newItemName.trim(), checked: false })
-      .select()
-      .single();
+    const { error, data } = await db.shopping.insert(supabase, { user_id: userId, name: newItemName.trim(), checked: false });
     setAdding(false);
     if (error) { toast.error("追加に失敗しました"); return; }
     setItems([data as ShoppingListItem, ...items]);

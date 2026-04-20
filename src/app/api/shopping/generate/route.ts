@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { DB_SCHEMA } from "@/lib/constants";
+import type { ShoppingGenerateRequest } from "@/types/api";
+import type { RecipeIngredient } from "@/types/database";
 
 export async function POST(request: Request) {
   try {
@@ -7,10 +10,11 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { recipe_id } = await request.json();
+    const body: ShoppingGenerateRequest = await request.json();
+    const { recipe_id } = body;
 
     const { data: recipe, error: recipeError } = await supabase
-      .schema("cookgo")
+      .schema(DB_SCHEMA)
       .from("recipes")
       .select("*")
       .eq("id", recipe_id)
@@ -22,26 +26,25 @@ export async function POST(request: Request) {
     }
 
     const { data: pantryItems } = await supabase
-      .schema("cookgo")
+      .schema(DB_SCHEMA)
       .from("pantry_items")
       .select("name, in_stock")
       .eq("user_id", user.id)
       .eq("in_stock", true);
 
-    const pantryNames = new Set((pantryItems ?? []).map((p: {name: string}) => p.name.toLowerCase()));
-
-    const ingredients = (recipe.ingredients as Array<{name: string; amount: string}> ?? []);
-    const itemsToShop = ingredients.filter((ing) => !pantryNames.has(ing.name.toLowerCase()));
+    const pantryNames = new Set((pantryItems ?? []).map((p: { name: string }) => p.name.toLowerCase()));
+    const ingredients = (recipe.ingredients as RecipeIngredient[]) ?? [];
+    const itemsToShop = ingredients.filter(ing => !pantryNames.has(ing.name.toLowerCase()));
 
     if (itemsToShop.length === 0) {
       return NextResponse.json({ message: "すべての食材がストックにあります", items: [] });
     }
 
     const { data: insertedItems, error: insertError } = await supabase
-      .schema("cookgo")
+      .schema(DB_SCHEMA)
       .from("shopping_list_items")
       .insert(
-        itemsToShop.map((ing) => ({
+        itemsToShop.map(ing => ({
           user_id: user.id,
           recipe_id,
           name: `${ing.name} ${ing.amount}`,

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { db } from "@/lib/db";
 import { RecipesClient } from "./recipes-client";
 
 export default async function RecipesPage() {
@@ -7,12 +8,7 @@ export default async function RecipesPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  const { data: recipes } = await supabase
-    .schema("cookgo")
-    .from("recipes")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  const recipes = await db.recipes.getAll(supabase, user.id);
 
-  return <RecipesClient recipes={recipes ?? []} />;
+  return <RecipesClient recipes={recipes} />;
 }
