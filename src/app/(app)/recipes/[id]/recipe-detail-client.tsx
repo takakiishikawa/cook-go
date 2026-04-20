@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { ShoppingCart, Clock, Check, X, Play, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/layout/app-header";
-import { Button } from "@/components/ui/button";
+import {
+  Button, Badge,
+  Card, CardContent, CardHeader, CardTitle,
+} from "@takaki/go-design-system";
 import { Recipe, RecipeIngredient, RecipeStep } from "@/types/database";
 import { cn } from "@/lib/utils";
 
@@ -27,14 +30,12 @@ function RecipeHeroImage({ title }: { title: string }) {
 
   if (!imageUrl) {
     return (
-      <div className="w-full h-48 rounded-xl bg-muted flex items-center justify-center">
+      <div className="w-full h-48 rounded-md bg-surface-subtle flex items-center justify-center">
         <UtensilsCrossed className="w-10 h-10 text-muted-foreground" strokeWidth={1.5} />
       </div>
     );
   }
-  return (
-    <img src={imageUrl} alt={title} className="w-full h-48 rounded-xl object-cover" />
-  );
+  return <img src={imageUrl} alt={title} className="w-full h-48 rounded-md object-cover" />;
 }
 
 export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientProps) {
@@ -48,7 +49,6 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
 
   const inPantryCount = ingredients.filter(i => pantryNames.has(i.name.toLowerCase())).length;
   const needToBuyCount = ingredients.length - inPantryCount;
-
   const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(recipe.title + " 作り方")}`;
 
   const generateShoppingList = async () => {
@@ -87,37 +87,34 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
       <AppHeader title={recipe.title} backHref="/recipes" />
 
       <div className="px-4 pt-4 space-y-5 pb-8">
-        {/* Hero image */}
         <RecipeHeroImage title={recipe.title} />
 
-        {/* Badges */}
+        {/* Stats badges */}
         <div className="flex flex-wrap gap-2">
           {recipe.protein_g_per_serving && (
-            <div className="bg-primary/10 rounded-xl px-4 py-2 text-center">
-              <p className="text-xs text-muted-foreground">タンパク質/食</p>
-              <p className="font-bold text-primary text-lg">{recipe.protein_g_per_serving}g</p>
-            </div>
+            <Badge className="px-3 py-1.5 text-sm">
+              P {recipe.protein_g_per_serving}g / 食
+            </Badge>
           )}
           {recipe.calorie_kcal_per_serving && (
-            <div className="bg-muted rounded-xl px-4 py-2 text-center">
-              <p className="text-xs text-muted-foreground">カロリー/食</p>
-              <p className="font-bold text-lg">{recipe.calorie_kcal_per_serving}kcal</p>
-            </div>
+            <Badge variant="secondary" className="px-3 py-1.5 text-sm">
+              {recipe.calorie_kcal_per_serving}kcal / 食
+            </Badge>
           )}
           {recipe.prep_time_min && (
-            <div className="bg-muted rounded-xl px-4 py-2 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">調理時間</p>
-                <p className="font-bold">{recipe.prep_time_min}分</p>
-              </div>
-            </div>
+            <Badge variant="secondary" className="px-3 py-1.5 text-sm gap-1">
+              <Clock className="w-3.5 h-3.5" />{recipe.prep_time_min}分
+            </Badge>
           )}
           {recipe.servings && recipe.servings > 1 && (
-            <div className="bg-muted rounded-xl px-4 py-2 text-center">
-              <p className="text-xs text-muted-foreground">食分</p>
-              <p className="font-bold text-lg">{recipe.servings}食分</p>
-            </div>
+            <Badge variant="outline" className="px-3 py-1.5 text-sm">
+              {recipe.servings}食分
+            </Badge>
+          )}
+          {recipe.is_meal_prep_friendly && (
+            <Badge variant="outline" className="px-3 py-1.5 text-sm bg-warning-subtle text-warning border-transparent">
+              作り置き
+            </Badge>
           )}
         </div>
 
@@ -126,64 +123,70 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
         )}
 
         {/* Ingredients */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold">食材リスト</h2>
-            <span className="text-sm text-muted-foreground">
-              食材庫: {inPantryCount}品 / 購入必要: {needToBuyCount}品
-            </span>
-          </div>
-          {ingredients.length > 0 ? (
-            <div className="space-y-1.5 grid grid-cols-2 gap-1.5">
-              {ingredients.map((ing, i) => {
-                const inPantry = pantryNames.has(ing.name.toLowerCase());
-                return (
-                  <div
-                    key={i}
-                    className={cn(
-                      "flex items-center justify-between px-3 py-2 rounded-xl",
-                      inPantry ? "bg-primary/5 border border-primary/20" : "bg-muted border border-border"
-                    )}
-                  >
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      {inPantry
-                        ? <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                        : <X className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                      }
-                      <span className="text-sm truncate">{ing.name}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground flex-shrink-0 ml-1">{ing.amount}</span>
-                  </div>
-                );
-              })}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">食材リスト</CardTitle>
+              <span className="text-sm text-muted-foreground">
+                食材庫: {inPantryCount}品 / 購入必要: {needToBuyCount}品
+              </span>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">食材情報なし</p>
-          )}
-          {needToBuyCount > 0 && (
-            <Button onClick={generateShoppingList} disabled={generating} className="w-full h-12 rounded-xl bg-primary gap-2">
-              <ShoppingCart className="w-4 h-4" />
-              {generating ? "生成中..." : `買い物リストを作る（${needToBuyCount}品）`}
-            </Button>
-          )}
-        </div>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-3">
+            {ingredients.length > 0 ? (
+              <div className="grid grid-cols-2 gap-1.5">
+                {ingredients.map((ing, i) => {
+                  const inPantry = pantryNames.has(ing.name.toLowerCase());
+                  return (
+                    <div
+                      key={i}
+                      className={cn(
+                        "flex items-center justify-between px-3 py-2 rounded-md border",
+                        inPantry ? "bg-primary/5 border-primary/20" : "bg-muted border-border"
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {inPantry
+                          ? <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          : <X className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                        }
+                        <span className="text-sm truncate">{ing.name}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground flex-shrink-0 ml-1">{ing.amount}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">食材情報なし</p>
+            )}
+            {needToBuyCount > 0 && (
+              <Button onClick={generateShoppingList} disabled={generating} className="w-full gap-2">
+                <ShoppingCart className="w-4 h-4" />
+                {generating ? "生成中..." : `買い物リストを作る（${needToBuyCount}品）`}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Steps */}
         {steps.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold">作り方</h2>
-              <a
-                href={youtubeSearchUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm text-destructive font-medium hover:underline"
-              >
-                <Play className="w-4 h-4" />
-                動画で見る
-              </a>
-            </div>
-            <div className="space-y-2">
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">作り方</CardTitle>
+                <a
+                  href={youtubeSearchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-sm text-destructive font-medium hover:underline"
+                >
+                  <Play className="w-4 h-4" />
+                  動画で見る
+                </a>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-2">
               {steps.map((step) => {
                 const done = completedSteps.has(step.order);
                 return (
@@ -191,13 +194,13 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
                     key={step.order}
                     onClick={() => toggleStep(step.order)}
                     className={cn(
-                      "w-full text-left flex gap-4 p-4 rounded-xl border transition-colors",
+                      "w-full text-left flex gap-4 p-4 rounded-md border transition-colors",
                       done ? "bg-primary/5 border-primary/20" : "bg-card border-border hover:bg-muted"
                     )}
                   >
                     <div className={cn(
                       "w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold",
-                      done ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                      done ? "bg-primary text-primary-foreground" : "bg-surface-subtle text-muted-foreground"
                     )}>
                       {done ? <Check className="w-3.5 h-3.5" /> : step.order}
                     </div>
@@ -207,8 +210,8 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
                   </button>
                 );
               })}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

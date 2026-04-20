@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { Card, CardContent, ProgressCircular } from "@takaki/go-design-system";
 
 interface ProteinGaugeProps {
   current: number;
@@ -8,55 +8,36 @@ interface ProteinGaugeProps {
 }
 
 export function ProteinGauge({ current, target }: ProteinGaugeProps) {
-  const pct = Math.min((current / target) * 100, 110);
+  const pct = Math.min(Math.round((current / target) * 100), 100);
   const remaining = Math.max(target - current, 0);
   const isOver = current > target;
 
-  const gaugeColor = pct < 50
-    ? "bg-primary/35"
-    : pct < 80
-    ? "bg-primary/65"
-    : pct <= 100
-    ? "bg-primary"
-    : "bg-warning";
-
   return (
-    <div className="bg-card border border-border rounded-xl p-5 space-y-4 card-shadow">
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground font-medium uppercase tracking-wide">タンパク質</p>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="font-heading text-4xl text-foreground">{Math.round(current)}</span>
-            <span className="text-muted-foreground text-sm">/ {target}g</span>
+    <Card>
+      <CardContent className="pt-5 pb-5">
+        <div className="flex items-center gap-5">
+          <ProgressCircular
+            value={pct}
+            size="xl"
+            color={isOver ? "warning" : "primary"}
+            showLabel
+          />
+          <div className="flex-1 space-y-1">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">タンパク質</p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-bold text-foreground">{Math.round(current)}</span>
+              <span className="text-sm text-muted-foreground">/ {target}g</span>
+            </div>
+            {isOver ? (
+              <p className="text-sm font-medium text-warning">+{Math.round(current - target)}g 超過</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                あと <span className="font-semibold text-foreground">{Math.round(remaining)}g</span>
+              </p>
+            )}
           </div>
         </div>
-        <div className="text-right">
-          {isOver ? (
-            <span className="text-warning font-semibold text-sm">+{Math.round(current - target)}g 超過</span>
-          ) : (
-            <div>
-              <p className="text-sm text-muted-foreground">あと</p>
-              <p className="font-semibold text-foreground">{Math.round(remaining)}g</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <div className="h-4 bg-muted rounded-full overflow-hidden">
-          <div
-            className={cn("h-full rounded-full transition-all duration-700", gaugeColor)}
-            style={{ width: `${Math.min(pct, 100)}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>0g</span>
-          <span className={cn("font-medium", pct >= 100 ? "text-primary" : "")}>
-            {Math.round(pct)}% 達成
-          </span>
-          <span>{target}g</span>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Plus, Archive, ImageOff, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  Button, Input, Badge, Banner,
+  Card, CardContent,
+} from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { PantryItem, PANTRY_CATEGORIES } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
@@ -19,7 +21,7 @@ function PantryItemImage({ imageUrl, name }: { imageUrl: string | null; name: st
   const [error, setError] = useState(false);
   if (!imageUrl || error) {
     return (
-      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+      <div className="w-10 h-10 rounded-md bg-surface-subtle flex items-center justify-center flex-shrink-0">
         <ImageOff className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
       </div>
     );
@@ -28,7 +30,7 @@ function PantryItemImage({ imageUrl, name }: { imageUrl: string | null; name: st
     <img
       src={imageUrl}
       alt={name}
-      className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-muted"
+      className="w-10 h-10 rounded-md object-cover flex-shrink-0 bg-muted"
       onError={() => setError(true)}
     />
   );
@@ -108,7 +110,7 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
       .select()
       .single();
     setAdding(false);
-    if (error) { toast.error(`追加に失敗しました: ${error.message}`); console.error(error); return; }
+    if (error) { toast.error(`追加に失敗しました: ${error.message}`); return; }
     setItems([...items, data as PantryItem]);
     setNewName("");
     setPreviewImageUrl(null);
@@ -135,59 +137,50 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
       <AppHeader title="食材庫" />
 
       <div className="px-4 md:px-8 pt-4 space-y-4 pb-8">
-        <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Archive className="w-5 h-5 text-primary" />
-            <span className="text-sm font-semibold">今家にあるもの</span>
-          </div>
-          <span className="text-2xl font-bold text-primary">
-            {inStockCount}<span className="text-sm font-normal text-muted-foreground ml-1">品</span>
-          </span>
-        </div>
+        <Banner
+          variant="default"
+          title={`在庫中: ${inStockCount}品`}
+          description="今家にある食材"
+        />
 
         {/* 追加フォーム */}
-        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-          <div className="flex gap-2">
-            <div className="flex-1 space-y-2">
-              <Input
-                placeholder="食材・調味料を追加..."
-                value={newName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewName(e.target.value)}
-                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && addItem()}
-                className="rounded-xl"
-              />
-              {/* AI suggested category badge */}
-              <div className="flex items-center gap-1.5 min-h-[24px]">
+        <Card>
+          <CardContent className="pt-4 space-y-3">
+            <div className="flex gap-2">
+              <div className="flex-1 space-y-2">
+                <Input
+                  placeholder="食材・調味料を追加..."
+                  value={newName}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewName(e.target.value)}
+                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && addItem()}
+                />
+                <div className="flex items-center gap-1.5 min-h-[24px]">
+                  {fetchingSuggest ? (
+                    <span className="text-xs text-muted-foreground">カテゴリー判定中...</span>
+                  ) : newName.trim() ? (
+                    <>
+                      <span className="text-xs text-muted-foreground">カテゴリー：</span>
+                      <Badge variant="outline">{suggestedCategory}</Badge>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-center w-20 h-20 rounded-md border border-border bg-surface-subtle flex-shrink-0 overflow-hidden">
                 {fetchingSuggest ? (
-                  <span className="text-xs text-muted-foreground">カテゴリー判定中...</span>
-                ) : newName.trim() ? (
-                  <>
-                    <span className="text-xs text-muted-foreground">カテゴリー：</span>
-                    <span className="text-xs font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                      {suggestedCategory}
-                    </span>
-                  </>
-                ) : null}
+                  <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                ) : previewImageUrl ? (
+                  <img src={previewImageUrl} alt={newName} className="w-full h-full object-cover" />
+                ) : (
+                  <ImageOff className="w-6 h-6 text-muted-foreground" strokeWidth={1.5} />
+                )}
               </div>
             </div>
-
-            {/* 画像プレビュー */}
-            <div className="flex flex-col items-center justify-center w-20 h-20 rounded-xl border border-border bg-muted flex-shrink-0 overflow-hidden">
-              {fetchingSuggest ? (
-                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              ) : previewImageUrl ? (
-                <img src={previewImageUrl} alt={newName} className="w-full h-full object-cover" />
-              ) : (
-                <ImageOff className="w-6 h-6 text-muted-foreground" strokeWidth={1.5} />
-              )}
-            </div>
-          </div>
-
-          <Button onClick={addItem} disabled={adding || fetchingSuggest} className="w-full rounded-xl bg-primary gap-2">
-            <Plus className="w-4 h-4" />
-            {adding ? "追加中..." : "追加する"}
-          </Button>
-        </div>
+            <Button onClick={addItem} disabled={adding || fetchingSuggest} className="w-full gap-2">
+              <Plus className="w-4 h-4" />
+              {adding ? "追加中..." : "追加する"}
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* カテゴリフィルター */}
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
@@ -195,11 +188,12 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
             <button
               key={cat}
               onClick={() => setFilterCategory(cat)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+              className={cn(
+                "flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border",
                 filterCategory === cat
-                  ? "bg-primary text-white"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card border-border text-muted-foreground hover:bg-muted"
+              )}
             >
               {cat}
             </button>
@@ -210,14 +204,14 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
         <div className="space-y-5 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
           {Object.entries(groupedItems).map(([category, categoryItems]) => (
             <div key={category} className="space-y-2">
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wide">{category}</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{category}</h3>
               <div className="space-y-1">
                 {categoryItems.map(item => (
                   <div
                     key={item.id}
                     className={cn(
-                      "flex items-center gap-3 bg-card border rounded-xl px-3 py-2.5 transition-colors",
-                      item.in_stock ? "border-border" : "border-border opacity-50"
+                      "flex items-center gap-3 bg-card border rounded-md px-3 py-2.5 transition-colors",
+                      !item.in_stock && "opacity-50"
                     )}
                   >
                     <PantryItemImage imageUrl={item.image_url} name={item.name} />
@@ -229,19 +223,18 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
                     </span>
                     <button
                       onClick={() => toggleStock(item)}
-                      className={cn(
-                        "flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-colors",
-                        item.in_stock
-                          ? "bg-primary/10 text-primary hover:bg-primary/20"
-                          : "bg-destructive/10 text-destructive hover:bg-destructive/20"
-                      )}
+                      className="flex-shrink-0"
                     >
-                      {item.in_stock ? "✓ 在庫あり" : "✗ 切れた"}
+                      {item.in_stock ? (
+                        <Badge variant="secondary" className="cursor-pointer">在庫あり</Badge>
+                      ) : (
+                        <Badge variant="destructive" className="cursor-pointer">切れた</Badge>
+                      )}
                     </button>
                     <button
                       onClick={() => deleteItem(item)}
                       disabled={deletingId === item.id}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
                       aria-label="削除"
                     >
                       <Trash2 className="w-4 h-4" strokeWidth={1.5} />

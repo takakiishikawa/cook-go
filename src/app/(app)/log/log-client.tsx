@@ -4,10 +4,12 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Plus, Trash2, Edit2, RefreshCw, CalendarRange, Link2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Button, Input,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Tabs, TabsContent, TabsList, TabsTrigger,
+  Card, CardContent, Banner,
+} from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { MealLog, MealType, MEAL_TYPE_LABELS, RecurringMeal } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
@@ -161,10 +163,11 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
       <AppHeader title="食事記録" />
 
       <div className="px-4 md:px-8 pt-4 pb-2">
-        <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-between">
-          <span className="text-sm font-semibold text-foreground">今日の合計タンパク質</span>
-          <span className="text-2xl font-bold text-primary">{Math.round(totalProtein)}g</span>
-        </div>
+        <Banner
+          variant="default"
+          title="今日の合計タンパク質"
+          description={`${Math.round(totalProtein)}g`}
+        />
       </div>
 
       <div className="px-4 md:px-8">
@@ -184,7 +187,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
           <TabsContent value="camera" className="mt-4 space-y-4">
             {/* レシピURL（任意） */}
             {!pendingResult && (
-              <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-xl px-3 py-2">
+              <div className="flex items-center gap-2 bg-muted border border-border rounded-md px-3 py-2">
                 <Link2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 <Input
                   placeholder="レシピURLを貼る（任意）— より正確に分析できます"
@@ -199,35 +202,37 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
                 {pendingImageUrl && (
                   <img src={pendingImageUrl} alt="food" className="w-full h-48 object-cover rounded-xl" />
                 )}
-                <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-                  <p className="font-semibold">{pendingResult.description}</p>
-                  <div className="flex gap-4">
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground">タンパク質</p>
-                      <p className="font-bold text-primary text-lg">{pendingResult.protein_g}g</p>
+                <Card>
+                  <CardContent className="pt-4 space-y-3">
+                    <p className="font-semibold">{pendingResult.description}</p>
+                    <div className="flex gap-4">
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground">タンパク質</p>
+                        <p className="font-bold text-primary text-lg">{pendingResult.protein_g}g</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground">カロリー</p>
+                        <p className="font-bold text-lg">{pendingResult.calorie_kcal}kcal</p>
+                      </div>
+                      <div className="text-center flex-1">
+                        <p className="text-sm text-muted-foreground">食事区分</p>
+                        <Select
+                          value={pendingResult.meal_type}
+                          onValueChange={(v) => setPendingResult({ ...pendingResult, meal_type: v as MealType })}
+                        >
+                          <SelectTrigger className="h-auto border-none shadow-none p-0 text-sm font-medium justify-center">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(["breakfast", "lunch", "dinner", "snack"] as MealType[]).map((t) => (
+                              <SelectItem key={t} value={t}>{MEAL_TYPE_LABELS[t]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground">カロリー</p>
-                      <p className="font-bold text-lg">{pendingResult.calorie_kcal}kcal</p>
-                    </div>
-                    <div className="text-center flex-1">
-                      <p className="text-sm text-muted-foreground">食事区分</p>
-                      <Select
-                        value={pendingResult.meal_type}
-                        onValueChange={(v) => setPendingResult({ ...pendingResult, meal_type: v as MealType })}
-                      >
-                        <SelectTrigger className="h-auto border-none shadow-none p-0 text-sm font-medium justify-center">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(["breakfast", "lunch", "dinner", "snack"] as MealType[]).map((t) => (
-                            <SelectItem key={t} value={t}>{MEAL_TYPE_LABELS[t]}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
                 <div className="flex gap-2">
                   <Button variant="outline" className="flex-1 rounded-xl" onClick={() => { setPendingResult(null); setPendingImageUrl(null); }}>
                     キャンセル
@@ -269,7 +274,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">今日の記録</h3>
                 <div className="md:grid md:grid-cols-2 md:gap-2 space-y-2 md:space-y-0">
                   {todayMeals.map((meal) => (
-                    <div key={meal.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
+                    <div key={meal.id} className="bg-card border border-border rounded-md p-3 flex items-center gap-3">
                       {meal.photo_url && (
                         <img src={meal.photo_url} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
                       )}
@@ -324,23 +329,23 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
           </TabsContent>
 
           <TabsContent value="bulk" className="mt-4 space-y-4">
-            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-              <p className="text-sm font-semibold">何日分まとめて登録しますか？</p>
-              <div className="flex gap-2">
-                {[3, 5, 7].map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setBulkDays(d)}
-                    className={cn(
-                      "flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors",
-                      bulkDays === d ? "bg-primary text-white border-primary" : "border-border text-foreground hover:bg-muted"
-                    )}
-                  >
-                    {d}日
-                  </button>
-                ))}
-              </div>
-            </div>
+            <Card>
+              <CardContent className="pt-4 space-y-3">
+                <p className="text-sm font-semibold text-foreground">何日分まとめて登録しますか？</p>
+                <div className="flex gap-2">
+                  {[3, 5, 7].map((d) => (
+                    <Button
+                      key={d}
+                      variant={bulkDays === d ? "default" : "outline"}
+                      className="flex-1"
+                      onClick={() => setBulkDays(d)}
+                    >
+                      {d}日
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
             {recurringMeals.length === 0 ? (
               <div className="text-center py-8 space-y-3">

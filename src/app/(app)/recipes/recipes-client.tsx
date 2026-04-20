@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Clock, RefreshCw, ChevronRight, UtensilsCrossed, ImageOff } from "lucide-react";
+import { Clock, RefreshCw, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button, Badge, EmptyState, Card, CardContent } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { Recipe } from "@/types/database";
 import { useRouter } from "next/navigation";
@@ -15,7 +15,6 @@ function RecipeImage({ title }: { title: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    // Search by main ingredient (text before の/と/で/や)
     const query = title.split(/[のとでや]/)[0].trim() || title;
     fetch(`/api/pantry/image?name=${encodeURIComponent(query)}`)
       .then(r => r.json())
@@ -26,7 +25,7 @@ function RecipeImage({ title }: { title: string }) {
 
   if (!imageUrl || error) {
     return (
-      <div className="w-full h-36 rounded-xl bg-muted flex items-center justify-center">
+      <div className="w-full h-36 rounded-md bg-surface-subtle flex items-center justify-center">
         <UtensilsCrossed className="w-8 h-8 text-muted-foreground" strokeWidth={1.5} />
       </div>
     );
@@ -35,7 +34,7 @@ function RecipeImage({ title }: { title: string }) {
     <img
       src={imageUrl}
       alt={title}
-      className="w-full h-36 rounded-xl object-cover bg-muted"
+      className="w-full h-36 rounded-md object-cover bg-muted"
       onError={() => setError(true)}
     />
   );
@@ -73,47 +72,43 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
         <Button
           onClick={generateRecipes}
           disabled={generating}
-          className="w-full h-12 rounded-xl bg-primary gap-2"
+          className="w-full h-11 gap-2"
         >
           <RefreshCw className={`w-4 h-4 ${generating ? "animate-spin" : ""}`} />
           {generating ? "AIがレシピを考えています..." : "今週のレシピを提案してもらう"}
         </Button>
 
         {recipes.length === 0 ? (
-          <div className="text-center py-16 space-y-3">
-            <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center mx-auto">
-              <UtensilsCrossed className="w-8 h-8 text-muted-foreground" strokeWidth={1.5} />
-            </div>
-            <p className="font-semibold text-foreground">レシピがまだありません</p>
-            <p className="text-sm text-muted-foreground">
-              上のボタンを押してAIにレシピを提案してもらいましょう
-            </p>
-          </div>
+          <EmptyState
+            icon={<UtensilsCrossed className="w-6 h-6" />}
+            title="レシピがまだありません"
+            description="上のボタンを押してAIにレシピを提案してもらいましょう"
+          />
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {recipes.map((recipe) => (
               <Link key={recipe.id} href={`/recipes/${recipe.id}`}>
-                <div className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
+                <Card className="overflow-hidden hover:shadow-md transition-shadow h-full">
                   <RecipeImage title={recipe.title} />
-                  <div className="p-3 space-y-1.5">
-                    <h3 className="font-semibold text-foreground text-sm line-clamp-2 leading-snug">{recipe.title}</h3>
+                  <CardContent className="p-3 space-y-2">
+                    <p className="font-semibold text-foreground text-sm line-clamp-2 leading-snug">{recipe.title}</p>
                     <div className="flex flex-wrap gap-1">
                       {recipe.protein_g_per_serving && (
-                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold">
-                          P {recipe.protein_g_per_serving}g
-                        </span>
+                        <Badge>P {recipe.protein_g_per_serving}g</Badge>
                       )}
                       {recipe.prep_time_min && (
-                        <span className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-                          <Clock className="w-2.5 h-2.5" />{recipe.prep_time_min}分
-                        </span>
+                        <Badge variant="secondary">
+                          <Clock className="w-2.5 h-2.5 mr-1" />{recipe.prep_time_min}分
+                        </Badge>
                       )}
                       {recipe.is_meal_prep_friendly && (
-                        <span className="text-xs bg-warning-subtle text-warning px-1.5 py-0.5 rounded-sm font-semibold">作り置き</span>
+                        <Badge variant="outline" className="bg-warning-subtle text-warning border-transparent">
+                          作り置き
+                        </Badge>
                       )}
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </Link>
             ))}
           </div>
