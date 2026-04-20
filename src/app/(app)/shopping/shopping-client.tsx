@@ -156,7 +156,7 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
             {unchecked.map(item => {
               const t = translations[item.name];
               return (
-                <div key={item.id} className="bg-card border border-border rounded-2xl p-4 space-y-2">
+                <div key={item.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
                   <div className="flex items-center gap-3">
                     <ItemImage name={item.name} />
                     <div className="flex-1 min-w-0">
@@ -202,7 +202,7 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
 
         {items.length === 0 ? (
           <div className="text-center py-16 space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center mx-auto">
               <ShoppingBag className="w-8 h-8 text-muted-foreground" strokeWidth={1.5} />
             </div>
             <p className="font-semibold text-foreground">買い物リストは空です</p>

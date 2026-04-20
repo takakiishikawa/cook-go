@@ -50,7 +50,7 @@ export function RecurringMealDialog({ userId, onSaved }: RecurringMealDialogProp
           <Plus className="w-4 h-4" />定期メニューを追加
         </Button>
       </DialogTrigger>
-      <DialogContent className="rounded-2xl mx-4">
+      <DialogContent className="rounded-xl mx-4">
         <DialogHeader>
           <DialogTitle className="font-heading">定期メニューを追加</DialogTitle>
         </DialogHeader>

@@ -81,7 +81,7 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
 
         {recipes.length === 0 ? (
           <div className="text-center py-16 space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center mx-auto">
               <UtensilsCrossed className="w-8 h-8 text-muted-foreground" strokeWidth={1.5} />
             </div>
             <p className="font-semibold text-foreground">レシピがまだありません</p>

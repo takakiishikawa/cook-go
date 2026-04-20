@@ -27,13 +27,13 @@ function RecipeHeroImage({ title }: { title: string }) {
 
   if (!imageUrl) {
     return (
-      <div className="w-full h-48 rounded-2xl bg-muted flex items-center justify-center">
+      <div className="w-full h-48 rounded-xl bg-muted flex items-center justify-center">
         <UtensilsCrossed className="w-10 h-10 text-muted-foreground" strokeWidth={1.5} />
       </div>
     );
   }
   return (
-    <img src={imageUrl} alt={title} className="w-full h-48 rounded-2xl object-cover" />
+    <img src={imageUrl} alt={title} className="w-full h-48 rounded-xl object-cover" />
   );
 }
 

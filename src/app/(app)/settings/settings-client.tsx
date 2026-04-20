@@ -59,7 +59,7 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
       <AppHeader title="設定" />
 
       <div className="px-4 md:px-8 pt-4 space-y-4 pb-8">
-        <div className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4">
+        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4">
           <Avatar className="w-14 h-14">
             <AvatarImage src={userAvatar} />
             <AvatarFallback className="bg-primary/10 text-primary">
@@ -72,7 +72,7 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
+        <div className="bg-card border border-border rounded-xl p-4 space-y-4">
           <h2 className="text-base font-bold">身体情報</h2>
           <div className="space-y-1.5">
             <Label>体重 (kg)</Label>
@@ -101,7 +101,7 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
           <h2 className="text-base font-bold">目標の参考値</h2>
           <div className="space-y-1.5 text-sm text-muted-foreground">
             <p>筋肉増量: 体重 × 1.6〜2.2g</p>

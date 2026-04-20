@@ -242,7 +242,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={analyzing}
                 className={cn(
-                  "w-full h-44 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-colors",
+                  "w-full h-44 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-colors",
                   analyzing ? "border-primary/50 bg-primary/5" : "border-border hover:border-primary/50 hover:bg-primary/5"
                 )}
               >

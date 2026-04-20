@@ -22,7 +22,7 @@ export function WeeklyChart({ weekMeals, target }: WeeklyChartProps) {
   });
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+    <div className="bg-card border border-border rounded-xl p-4 space-y-3">
       <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">週次推移</h3>
       <ResponsiveContainer width="100%" height={120}>
         <BarChart data={data} barCategoryGap="30%">

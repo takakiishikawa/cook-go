@@ -47,7 +47,7 @@ export function MealEditDialog({ meal, onClose, onSaved }: MealEditDialogProps) 
 
   return (
     <Dialog open onOpenChange={(isOpen: boolean) => { if (!isOpen) onClose(); }}>
-      <DialogContent className="rounded-2xl mx-4">
+      <DialogContent className="rounded-xl mx-4">
         <DialogHeader>
           <DialogTitle className="font-heading">食事を編集</DialogTitle>
         </DialogHeader>

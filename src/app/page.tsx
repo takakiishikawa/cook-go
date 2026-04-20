@@ -21,7 +21,7 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.56_0.19_155_/_0.08),transparent)] pointer-events-none" />
       <div className="w-full max-w-sm flex flex-col items-center gap-8 relative z-10">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center shadow-lg">
+          <div className="w-20 h-20 rounded-xl bg-primary flex items-center justify-center shadow-lg">
             <Leaf className="w-10 h-10 text-white" strokeWidth={1.5} />
           </div>
           <h1 className="text-4xl font-bold text-foreground tracking-tight">CookGo</h1>
@@ -33,7 +33,7 @@ export default function LoginPage() {
         </div>
 
         <div className="w-full space-y-4">
-          <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Camera className="w-4 h-4 text-primary" />
@@ -65,7 +65,7 @@ export default function LoginPage() {
 
           <Button
             onClick={handleGoogleLogin}
-            className="w-full h-14 text-base font-semibold rounded-2xl bg-primary hover:bg-primary/90 gap-3"
+            className="w-full h-14 text-base font-semibold rounded-xl bg-primary hover:bg-primary/90 gap-3"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="white" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

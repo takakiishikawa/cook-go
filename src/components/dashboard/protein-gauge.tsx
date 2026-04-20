@@ -21,7 +21,7 @@ export function ProteinGauge({ current, target }: ProteinGaugeProps) {
     : "bg-warning";
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5 space-y-4 card-shadow">
+    <div className="bg-card border border-border rounded-xl p-5 space-y-4 card-shadow">
       <div className="flex items-end justify-between">
         <div>
           <p className="text-sm text-muted-foreground font-medium uppercase tracking-wide">タンパク質</p>
