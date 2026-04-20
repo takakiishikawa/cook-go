@@ -1,6 +1,5 @@
 @import "tailwindcss";
-@source "../node_modules/@takaki/go-design-system/dist";
-@import "@takaki/go-design-system/globals.css";
+@source "../../node_modules/@takaki/go-design-system/dist";
 @import "@takaki/go-design-system/theme.css";
 
 /* class-based dark mode: responds to .dark on <html> */

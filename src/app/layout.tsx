@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_JP } from "next/font/google";
-import { DesignTokens, AppLayout, Toaster } from "@takaki/go-design-system";
+import { DesignTokens, Toaster } from "@takaki/go-design-system";
 import { PwaRegister } from "@/components/pwa-register";
-import { CookGoSidebar } from "@/components/layout/cook-go-sidebar";
-import { createClient } from "@/lib/supabase/server";
 import { DarkModeInit } from "@/components/dark-mode-init";
 import "./globals.css";
 
@@ -41,16 +39,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   return (
     <html
       lang="ja"
@@ -65,13 +58,7 @@ export default async function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="min-h-full">
-        {user ? (
-          <AppLayout sidebar={<CookGoSidebar />}>
-            {children}
-          </AppLayout>
-        ) : (
-          <main>{children}</main>
-        )}
+        {children}
         <Toaster position="top-center" richColors />
         <PwaRegister />
       </body>
