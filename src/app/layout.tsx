@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_JP } from "next/font/google";
-import { DesignTokens, Toaster } from "@takaki/go-design-system";
+import { DesignTokens, AppLayout, Toaster } from "@takaki/go-design-system";
 import { PwaRegister } from "@/components/pwa-register";
+import { CookGoSidebar } from "@/components/layout/cook-go-sidebar";
+import { createClient } from "@/lib/supabase/server";
+import { DarkModeInit } from "@/components/dark-mode-init";
 import "./globals.css";
 
 const notoSansJP = Noto_Sans_JP({
@@ -38,11 +41,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <html
       lang="ja"
@@ -50,12 +58,20 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <DarkModeInit />
         <DesignTokens primaryColor="#16A34A" primaryColorHover="#15803D" />
+        <style dangerouslySetInnerHTML={{ __html: `:root{--sidebar-accent:142 76% 94%;--sidebar-accent-foreground:142 72% 22%}.dark{--sidebar-accent:142 30% 16%;--sidebar-accent-foreground:142 50% 72%}` }} />
         <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="min-h-full flex flex-col bg-background font-sans text-base">
-        {children}
+      <body className="min-h-full">
+        {user ? (
+          <AppLayout sidebar={<CookGoSidebar />}>
+            {children}
+          </AppLayout>
+        ) : (
+          <main>{children}</main>
+        )}
         <Toaster position="top-center" richColors />
         <PwaRegister />
       </body>
