@@ -22,7 +22,7 @@ export function MealSummary({ meals }: MealSummaryProps) {
 
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-3">
         <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
           今日の食事
         </CardTitle>
@@ -40,29 +40,32 @@ export function MealSummary({ meals }: MealSummaryProps) {
                 key={type}
                 href={`/log?type=${type}`}
                 className={cn(
-                  "rounded-md border p-3 flex items-center gap-3 transition-colors",
+                  "rounded-md border p-3 flex flex-col gap-2 transition-colors",
                   hasLog
                     ? "bg-primary/5 border-primary/20"
                     : "bg-card border-border hover:bg-muted"
                 )}
               >
-                <div className={cn(
-                  "w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0",
-                  hasLog ? "bg-primary/10" : "bg-surface-subtle"
-                )}>
-                  <Icon className={cn("w-4 h-4", hasLog ? "text-primary" : "text-muted-foreground")} strokeWidth={2} />
-                </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className={cn(
+                    "w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0",
+                    hasLog ? "bg-primary/10" : "bg-surface-subtle"
+                  )}>
+                    <Icon className={cn("w-3.5 h-3.5", hasLog ? "text-primary" : "text-muted-foreground")} strokeWidth={2} />
+                  </div>
                   <p className="text-xs text-muted-foreground">{MEAL_TYPE_LABELS[type]}</p>
-                  {hasLog ? (
-                    <p className="text-sm font-bold text-primary">{Math.round(totalProtein)}g</p>
-                  ) : (
-                    <div className="flex items-center gap-0.5 text-muted-foreground">
-                      <Plus className="w-3 h-3" />
-                      <span className="text-xs">追加</span>
-                    </div>
-                  )}
                 </div>
+                {hasLog ? (
+                  <p className="text-lg font-bold text-primary leading-none">{Math.round(totalProtein)}g</p>
+                ) : (
+                  <div className="flex items-center gap-0.5 text-muted-foreground">
+                    <Plus className="w-3 h-3" />
+                    <span className="text-xs">記録する</span>
+                  </div>
+                )}
+                {hasLog && (
+                  <p className="text-xs text-muted-foreground">{typeMeals.length}品</p>
+                )}
               </Link>
             );
           })}

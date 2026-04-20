@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Plus, Archive, ImageOff, Trash2 } from "lucide-react";
+import { Plus, ImageOff, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Button, Input, Badge, Banner,
-  Card, CardContent,
+  Button, Input, Badge, Card, CardContent,
+  TagGroup, Tag, Section,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
-import { PantryItem, PANTRY_CATEGORIES } from "@/types/database";
+import { PantryItem } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -131,76 +131,87 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
   }, {});
 
   const inStockCount = items.filter(i => i.in_stock).length;
+  const outOfStockCount = items.length - inStockCount;
 
   return (
     <div className="flex flex-col">
       <AppHeader title="食材庫" />
 
-      <div className="px-4 md:px-8 pt-4 space-y-4 pb-8">
-        <Banner
-          variant="default"
-          title={`在庫中: ${inStockCount}品`}
-          description="今家にある食材"
-        />
-
-        {/* 追加フォーム */}
-        <Card>
-          <CardContent className="pt-4 space-y-3">
-            <div className="flex gap-2">
-              <div className="flex-1 space-y-2">
-                <Input
-                  placeholder="食材・調味料を追加..."
-                  value={newName}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewName(e.target.value)}
-                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && addItem()}
-                />
-                <div className="flex items-center gap-1.5 min-h-[24px]">
-                  {fetchingSuggest ? (
-                    <span className="text-xs text-muted-foreground">カテゴリー判定中...</span>
-                  ) : newName.trim() ? (
-                    <>
-                      <span className="text-xs text-muted-foreground">カテゴリー：</span>
-                      <Badge variant="outline">{suggestedCategory}</Badge>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-              <div className="flex flex-col items-center justify-center w-20 h-20 rounded-md border border-border bg-surface-subtle flex-shrink-0 overflow-hidden">
-                {fetchingSuggest ? (
-                  <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                ) : previewImageUrl ? (
-                  <img src={previewImageUrl} alt={newName} className="w-full h-full object-cover" />
-                ) : (
-                  <ImageOff className="w-6 h-6 text-muted-foreground" strokeWidth={1.5} />
-                )}
-              </div>
-            </div>
-            <Button onClick={addItem} disabled={adding || fetchingSuggest} className="w-full gap-2">
-              <Plus className="w-4 h-4" />
-              {adding ? "追加中..." : "追加する"}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* カテゴリフィルター */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setFilterCategory(cat)}
-              className={cn(
-                "flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border",
-                filterCategory === cat
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card border-border text-muted-foreground hover:bg-muted"
-              )}
-            >
-              {cat}
-            </button>
-          ))}
+      <div className="px-4 md:px-8 pt-4 pb-8 space-y-5">
+        {/* Stats row */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <p className="text-xs text-muted-foreground">在庫あり</p>
+              <p className="text-2xl font-bold text-primary mt-1">{inStockCount}<span className="text-sm font-normal text-muted-foreground ml-1">品</span></p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <p className="text-xs text-muted-foreground">在庫切れ</p>
+              <p className={cn("text-2xl font-bold mt-1", outOfStockCount > 0 ? "text-destructive" : "text-foreground")}>
+                {outOfStockCount}<span className="text-sm font-normal text-muted-foreground ml-1">品</span>
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* 食材リスト */}
+        {/* Add form */}
+        <Section title="食材を追加">
+          <Card>
+            <CardContent className="pt-4 space-y-3">
+              <div className="flex gap-3">
+                <div className="flex-1 space-y-2">
+                  <Input
+                    placeholder="食材・調味料を追加..."
+                    value={newName}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewName(e.target.value)}
+                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && addItem()}
+                  />
+                  <div className="flex items-center gap-1.5 min-h-[24px]">
+                    {fetchingSuggest ? (
+                      <span className="text-xs text-muted-foreground">カテゴリー判定中...</span>
+                    ) : newName.trim() ? (
+                      <>
+                        <span className="text-xs text-muted-foreground">カテゴリー：</span>
+                        <Badge variant="outline">{suggestedCategory}</Badge>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="flex flex-col items-center justify-center w-16 h-16 rounded-md border border-border bg-surface-subtle flex-shrink-0 overflow-hidden">
+                  {fetchingSuggest ? (
+                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  ) : previewImageUrl ? (
+                    <img src={previewImageUrl} alt={newName} className="w-full h-full object-cover" />
+                  ) : (
+                    <ImageOff className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+                  )}
+                </div>
+              </div>
+              <Button onClick={addItem} disabled={adding || fetchingSuggest} className="w-full gap-2">
+                <Plus className="w-4 h-4" />
+                {adding ? "追加中..." : "追加する"}
+              </Button>
+            </CardContent>
+          </Card>
+        </Section>
+
+        {/* Category filter */}
+        <TagGroup wrap>
+          {categories.map(cat => (
+            <Tag
+              key={cat}
+              color={filterCategory === cat ? "primary" : "default"}
+              onClick={() => setFilterCategory(cat)}
+              className="cursor-pointer select-none"
+            >
+              {cat}
+            </Tag>
+          ))}
+        </TagGroup>
+
+        {/* Items list */}
         <div className="space-y-5 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
           {Object.entries(groupedItems).map(([category, categoryItems]) => (
             <div key={category} className="space-y-2">
@@ -210,7 +221,7 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
                   <div
                     key={item.id}
                     className={cn(
-                      "flex items-center gap-3 bg-card border rounded-md px-3 py-2.5 transition-colors",
+                      "flex items-center gap-3 bg-card border rounded-md px-3 py-2.5 transition-opacity",
                       !item.in_stock && "opacity-50"
                     )}
                   >
@@ -221,10 +232,7 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
                     )}>
                       {item.name}
                     </span>
-                    <button
-                      onClick={() => toggleStock(item)}
-                      className="flex-shrink-0"
-                    >
+                    <button onClick={() => toggleStock(item)} className="flex-shrink-0">
                       {item.in_stock ? (
                         <Badge variant="secondary" className="cursor-pointer">在庫あり</Badge>
                       ) : (
@@ -245,6 +253,14 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
             </div>
           ))}
         </div>
+
+        {items.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground">
+            <ImageOff className="w-12 h-12 mx-auto mb-3 opacity-30" strokeWidth={1} />
+            <p className="text-sm">食材がまだありません</p>
+            <p className="text-xs mt-1">上のフォームから追加してください</p>
+          </div>
+        )}
       </div>
     </div>
   );

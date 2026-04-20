@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Clock, Check, X, Play, UtensilsCrossed } from "lucide-react";
+import { ShoppingCart, Clock, Check, X, Play, UtensilsCrossed, Users, Flame, Beef } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/layout/app-header";
 import {
-  Button, Badge,
+  Button, Badge, Skeleton,
   Card, CardContent, CardHeader, CardTitle,
+  Section,
 } from "@takaki/go-design-system";
 import { Recipe, RecipeIngredient, RecipeStep } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -19,23 +20,25 @@ interface RecipeDetailClientProps {
 
 function RecipeHeroImage({ title }: { title: string }) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const query = title.split(/[のとでや]/)[0].trim() || title;
     fetch(`/api/pantry/image?name=${encodeURIComponent(query)}`)
       .then(r => r.json())
-      .then(d => setImageUrl(d.imageUrl ?? null))
-      .catch(() => {});
+      .then(d => { setImageUrl(d.imageUrl ?? null); setLoading(false); })
+      .catch(() => setLoading(false));
   }, [title]);
 
+  if (loading) return <Skeleton className="w-full h-56" />;
   if (!imageUrl) {
     return (
-      <div className="w-full h-48 rounded-md bg-surface-subtle flex items-center justify-center">
-        <UtensilsCrossed className="w-10 h-10 text-muted-foreground" strokeWidth={1.5} />
+      <div className="w-full h-56 bg-surface-subtle flex items-center justify-center">
+        <UtensilsCrossed className="w-12 h-12 text-muted-foreground" strokeWidth={1.5} />
       </div>
     );
   }
-  return <img src={imageUrl} alt={title} className="w-full h-48 rounded-md object-cover" />;
+  return <img src={imageUrl} alt={title} className="w-full h-56 object-cover" />;
 }
 
 export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientProps) {
@@ -82,66 +85,85 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
     });
   };
 
+  const completedCount = completedSteps.size;
+  const totalSteps = steps.length;
+
   return (
     <div className="flex flex-col">
       <AppHeader title={recipe.title} backHref="/recipes" />
 
-      <div className="px-4 pt-4 space-y-5 pb-8">
+      {/* Hero image - full bleed */}
+      <div className="overflow-hidden">
         <RecipeHeroImage title={recipe.title} />
+      </div>
 
-        {/* Stats badges */}
-        <div className="flex flex-wrap gap-2">
-          {recipe.protein_g_per_serving && (
-            <Badge className="px-3 py-1.5 text-sm">
-              P {recipe.protein_g_per_serving}g / 食
-            </Badge>
-          )}
-          {recipe.calorie_kcal_per_serving && (
-            <Badge variant="secondary" className="px-3 py-1.5 text-sm">
-              {recipe.calorie_kcal_per_serving}kcal / 食
-            </Badge>
-          )}
-          {recipe.prep_time_min && (
-            <Badge variant="secondary" className="px-3 py-1.5 text-sm gap-1">
-              <Clock className="w-3.5 h-3.5" />{recipe.prep_time_min}分
-            </Badge>
-          )}
-          {recipe.servings && recipe.servings > 1 && (
-            <Badge variant="outline" className="px-3 py-1.5 text-sm">
-              {recipe.servings}食分
-            </Badge>
-          )}
-          {recipe.is_meal_prep_friendly && (
-            <Badge variant="outline" className="px-3 py-1.5 text-sm bg-warning-subtle text-warning border-transparent">
-              作り置き
-            </Badge>
+      <div className="px-4 md:px-8 pt-5 pb-8 space-y-6">
+        {/* Title + description */}
+        <div className="space-y-2">
+          <h1 className="text-xl font-bold text-foreground">{recipe.title}</h1>
+          {recipe.description && (
+            <p className="text-sm text-muted-foreground leading-relaxed">{recipe.description}</p>
           )}
         </div>
 
-        {recipe.description && (
-          <p className="text-sm text-muted-foreground leading-relaxed">{recipe.description}</p>
+        {/* Stats row */}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {recipe.protein_g_per_serving && (
+            <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-md px-3 py-2.5">
+              <Beef className="w-4 h-4 text-primary flex-shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">タンパク質</p>
+                <p className="text-sm font-bold text-primary">{recipe.protein_g_per_serving}g</p>
+              </div>
+            </div>
+          )}
+          {recipe.calorie_kcal_per_serving && (
+            <div className="flex items-center gap-2 bg-card border border-border rounded-md px-3 py-2.5">
+              <Flame className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">カロリー</p>
+                <p className="text-sm font-bold text-foreground">{recipe.calorie_kcal_per_serving}kcal</p>
+              </div>
+            </div>
+          )}
+          {recipe.prep_time_min && (
+            <div className="flex items-center gap-2 bg-card border border-border rounded-md px-3 py-2.5">
+              <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">調理時間</p>
+                <p className="text-sm font-bold text-foreground">{recipe.prep_time_min}分</p>
+              </div>
+            </div>
+          )}
+          {recipe.servings && recipe.servings > 1 && (
+            <div className="flex items-center gap-2 bg-card border border-border rounded-md px-3 py-2.5">
+              <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground">食分</p>
+                <p className="text-sm font-bold text-foreground">{recipe.servings}食分</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {recipe.is_meal_prep_friendly && (
+          <Badge variant="outline" className="bg-warning-subtle text-warning border-transparent">
+            作り置き向き
+          </Badge>
         )}
 
         {/* Ingredients */}
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">食材リスト</CardTitle>
-              <span className="text-sm text-muted-foreground">
-                食材庫: {inPantryCount}品 / 購入必要: {needToBuyCount}品
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0 space-y-3">
-            {ingredients.length > 0 ? (
-              <div className="grid grid-cols-2 gap-1.5">
+        <Section title="食材リスト" description={`食材庫: ${inPantryCount}品 / 購入必要: ${needToBuyCount}品`}>
+          {ingredients.length > 0 ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
                 {ingredients.map((ing, i) => {
                   const inPantry = pantryNames.has(ing.name.toLowerCase());
                   return (
                     <div
                       key={i}
                       className={cn(
-                        "flex items-center justify-between px-3 py-2 rounded-md border",
+                        "flex items-center justify-between px-3 py-2.5 rounded-md border",
                         inPantry ? "bg-primary/5 border-primary/20" : "bg-muted border-border"
                       )}
                     >
@@ -157,36 +179,36 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
                   );
                 })}
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">食材情報なし</p>
-            )}
-            {needToBuyCount > 0 && (
-              <Button onClick={generateShoppingList} disabled={generating} className="w-full gap-2">
-                <ShoppingCart className="w-4 h-4" />
-                {generating ? "生成中..." : `買い物リストを作る（${needToBuyCount}品）`}
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+              {needToBuyCount > 0 && (
+                <Button onClick={generateShoppingList} disabled={generating} className="w-full gap-2">
+                  <ShoppingCart className="w-4 h-4" />
+                  {generating ? "生成中..." : `買い物リストを作る（${needToBuyCount}品）`}
+                </Button>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">食材情報なし</p>
+          )}
+        </Section>
 
         {/* Steps */}
         {steps.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">作り方</CardTitle>
-                <a
-                  href={youtubeSearchUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-sm text-destructive font-medium hover:underline"
-                >
-                  <Play className="w-4 h-4" />
-                  動画で見る
-                </a>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0 space-y-2">
+          <Section
+            title="作り方"
+            description={totalSteps > 0 ? `${completedCount} / ${totalSteps} ステップ完了` : undefined}
+            actions={
+              <a
+                href={youtubeSearchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-sm text-destructive font-medium hover:underline"
+              >
+                <Play className="w-4 h-4" />
+                動画で見る
+              </a>
+            }
+          >
+            <div className="space-y-2">
               {steps.map((step) => {
                 const done = completedSteps.has(step.order);
                 return (
@@ -204,14 +226,14 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
                     )}>
                       {done ? <Check className="w-3.5 h-3.5" /> : step.order}
                     </div>
-                    <p className={cn("text-sm leading-relaxed flex-1 text-left", done && "line-through text-muted-foreground")}>
+                    <p className={cn("text-sm leading-relaxed flex-1 text-left pt-0.5", done && "line-through text-muted-foreground")}>
                       {step.text}
                     </p>
                   </button>
                 );
               })}
-            </CardContent>
-          </Card>
+            </div>
+          </Section>
         )}
       </div>
     </div>

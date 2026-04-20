@@ -1,16 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, ShoppingBag, Globe, ImageOff } from "lucide-react";
+import { Plus, Trash2, ShoppingBag, Globe, ImageOff, Check } from "lucide-react";
 import { toast } from "sonner";
 import {
   Button, Checkbox, Input, EmptyState,
   Card, CardContent,
   Sheet, SheetContent, SheetHeader, SheetTitle,
+  Section, Badge,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { ShoppingListItem } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface ShoppingClientProps {
   userId: string;
@@ -136,6 +138,7 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
     <div className="flex flex-col">
       <AppHeader title="買い物リスト" />
 
+      {/* Store mode sheet */}
       <Sheet open={storeMode} onOpenChange={setStoreMode}>
         <SheetContent side="bottom" className="h-[90vh] flex flex-col">
           <SheetHeader>
@@ -150,7 +153,7 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
               return (
                 <Card key={item.id}>
                   <CardContent className="pt-4 pb-4">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <ItemImage name={item.name} />
                       <div className="flex-1 min-w-0">
                         <p className="text-2xl font-bold text-foreground">{item.name}</p>
@@ -169,7 +172,8 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
         </SheetContent>
       </Sheet>
 
-      <div className="px-4 pt-4 space-y-4">
+      <div className="px-4 md:px-8 pt-4 pb-8 space-y-5">
+        {/* Add item */}
         <div className="flex gap-2">
           <Input
             placeholder="アイテムを追加..."
@@ -184,9 +188,13 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
         </div>
 
         {unchecked.length > 0 && (
-          <Button variant="outline" onClick={() => { setStoreMode(true); fetchTranslations(unchecked); }} className="w-full gap-2">
+          <Button
+            variant="outline"
+            onClick={() => { setStoreMode(true); fetchTranslations(unchecked); }}
+            className="w-full gap-2"
+          >
             <Globe className="w-4 h-4" />
-            店員に見せる（日本語・English・Tiếng Việt）
+            店員に見せる（日・English・Tiếng Việt）
           </Button>
         )}
 
@@ -197,10 +205,9 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
             description="レシピページから買い物リストを生成するか、手動で追加してください"
           />
         ) : (
-          <div className="space-y-5 pb-8">
+          <div className="space-y-6 pb-4">
             {unchecked.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">未購入 ({unchecked.length})</p>
+              <Section title={`未購入`} description={`${unchecked.length}品`}>
                 <div className="space-y-1.5">
                   {unchecked.map((item) => (
                     <div key={item.id} className="flex items-center gap-3 bg-card border border-border rounded-md px-3 py-2.5">
@@ -220,15 +227,19 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
                     </div>
                   ))}
                 </div>
-              </div>
+              </Section>
             )}
 
             {checked.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">購入済み ({checked.length})</p>
-                  <button onClick={clearChecked} className="text-sm text-destructive font-medium">クリア</button>
-                </div>
+              <Section
+                title="購入済み"
+                description={`${checked.length}品`}
+                actions={
+                  <button onClick={clearChecked} className="text-sm text-destructive font-medium hover:underline">
+                    クリア
+                  </button>
+                }
+              >
                 <div className="space-y-1.5">
                   {checked.map((item) => (
                     <div key={item.id} className="flex items-center gap-3 bg-muted border border-border rounded-md px-3 py-2.5 opacity-60">
@@ -241,7 +252,7 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
                     </div>
                   ))}
                 </div>
-              </div>
+              </Section>
             )}
           </div>
         )}
