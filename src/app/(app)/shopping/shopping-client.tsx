@@ -162,7 +162,7 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
                     <div className="flex-1 min-w-0">
                       <p className="text-2xl font-bold text-foreground">{item.name}</p>
                       {t?.en && <p className="text-lg font-medium text-muted-foreground">{t.en}</p>}
-                      {t?.vi && <p className="text-lg font-semibold text-blue-600">{t.vi}</p>}
+                      {t?.vi && <p className="text-lg font-semibold text-[var(--color-info)]">{t.vi}</p>}
                     </div>
                   </div>
                 </div>

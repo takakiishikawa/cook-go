@@ -109,7 +109,7 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
                         </span>
                       )}
                       {recipe.is_meal_prep_friendly && (
-                        <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">作り置き</span>
+                        <span className="text-xs bg-warning-subtle text-warning px-1.5 py-0.5 rounded-sm font-semibold">作り置き</span>
                       )}
                     </div>
                   </div>

@@ -233,7 +233,7 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
                         "flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-colors",
                         item.in_stock
                           ? "bg-primary/10 text-primary hover:bg-primary/20"
-                          : "bg-red-50 text-red-500 hover:bg-red-100"
+                          : "bg-destructive/10 text-destructive hover:bg-destructive/20"
                       )}
                     >
                       {item.in_stock ? "✓ 在庫あり" : "✗ 切れた"}

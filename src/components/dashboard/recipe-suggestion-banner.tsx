@@ -41,7 +41,7 @@ export function RecipeSuggestionBanner({ recipes }: RecipeSuggestionBannerProps)
                   </span>
                 )}
                 {recipe.is_meal_prep_friendly && (
-                  <span className="text-sm bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">
+                  <span className="text-xs bg-warning-subtle text-warning px-1.5 py-0.5 rounded-sm font-semibold">
                     作り置き
                   </span>
                 )}

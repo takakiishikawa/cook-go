@@ -18,7 +18,7 @@ export function ProteinGauge({ current, target }: ProteinGaugeProps) {
     ? "bg-primary/65"
     : pct <= 100
     ? "bg-primary"
-    : "bg-amber-400";
+    : "bg-warning";
 
   return (
     <div className="bg-card border border-border rounded-2xl p-5 space-y-4 card-shadow">
@@ -32,7 +32,7 @@ export function ProteinGauge({ current, target }: ProteinGaugeProps) {
         </div>
         <div className="text-right">
           {isOver ? (
-            <span className="text-amber-500 font-semibold text-sm">+{Math.round(current - target)}g 超過</span>
+            <span className="text-warning font-semibold text-sm">+{Math.round(current - target)}g 超過</span>
           ) : (
             <div>
               <p className="text-sm text-muted-foreground">あと</p>

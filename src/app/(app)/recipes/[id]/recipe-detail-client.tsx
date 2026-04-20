@@ -177,7 +177,7 @@ export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientPr
                 href={youtubeSearchUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm text-red-500 font-medium hover:underline"
+                className="flex items-center gap-1.5 text-sm text-destructive font-medium hover:underline"
               >
                 <Play className="w-4 h-4" />
                 動画で見る

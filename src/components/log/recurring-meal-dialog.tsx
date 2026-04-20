@@ -45,8 +45,10 @@ export function RecurringMealDialog({ userId, onSaved }: RecurringMealDialogProp
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className="w-full h-10 rounded-xl border border-input bg-background px-4 text-sm font-medium hover:bg-accent hover:text-accent-foreground flex items-center justify-center gap-2">
-        <Plus className="w-4 h-4" />定期メニューを追加
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full gap-2">
+          <Plus className="w-4 h-4" />定期メニューを追加
+        </Button>
       </DialogTrigger>
       <DialogContent className="rounded-2xl mx-4">
         <DialogHeader>

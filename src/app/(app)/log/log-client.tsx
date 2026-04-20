@@ -6,6 +6,7 @@ import { Camera, Plus, Trash2, Edit2, RefreshCw, CalendarRange, Link2 } from "lu
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppHeader } from "@/components/layout/app-header";
 import { MealLog, MealType, MEAL_TYPE_LABELS, RecurringMeal } from "@/types/database";
@@ -168,14 +169,14 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
 
       <div className="px-4 md:px-8">
         <Tabs defaultValue="camera" className="mt-3">
-          <TabsList className="w-full rounded-xl">
-            <TabsTrigger value="camera" className="flex-1 rounded-lg gap-1.5">
+          <TabsList variant="underline" className="w-full">
+            <TabsTrigger value="camera" className="flex-1 gap-1.5">
               <Camera className="w-3.5 h-3.5" />写真
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex-1 rounded-lg gap-1.5">
+            <TabsTrigger value="history" className="flex-1 gap-1.5">
               <RefreshCw className="w-3.5 h-3.5" />履歴
             </TabsTrigger>
-            <TabsTrigger value="bulk" className="flex-1 rounded-lg gap-1.5">
+            <TabsTrigger value="bulk" className="flex-1 gap-1.5">
               <CalendarRange className="w-3.5 h-3.5" />まとめて
             </TabsTrigger>
           </TabsList>
@@ -211,17 +212,19 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
                     </div>
                     <div className="text-center flex-1">
                       <p className="text-sm text-muted-foreground">食事区分</p>
-                      <select
-                        className="text-sm font-medium bg-transparent border-none outline-none"
+                      <Select
                         value={pendingResult.meal_type}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                          setPendingResult({ ...pendingResult, meal_type: e.target.value as MealType })
-                        }
+                        onValueChange={(v) => setPendingResult({ ...pendingResult, meal_type: v as MealType })}
                       >
-                        {(["breakfast", "lunch", "dinner", "snack"] as MealType[]).map((t) => (
-                          <option key={t} value={t}>{MEAL_TYPE_LABELS[t]}</option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="h-auto border-none shadow-none p-0 text-sm font-medium justify-center">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(["breakfast", "lunch", "dinner", "snack"] as MealType[]).map((t) => (
+                            <SelectItem key={t} value={t}>{MEAL_TYPE_LABELS[t]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>
@@ -281,7 +284,7 @@ export function LogClient({ userId, todayMeals: initialTodayMeals, recentMeals, 
                         <button onClick={() => setEditingMeal(meal)} className="p-1.5 hover:bg-muted rounded-lg">
                           <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
-                        <button onClick={() => deleteMeal(meal.id)} className="p-1.5 hover:bg-red-50 rounded-lg">
+                        <button onClick={() => deleteMeal(meal.id)} className="p-1.5 hover:bg-destructive/10 rounded-lg">
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />
                         </button>
                       </div>
