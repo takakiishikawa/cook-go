@@ -27,7 +27,7 @@ export function ProteinGauge({ current, target }: ProteinGaugeProps) {
               タンパク質
             </p>
             <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-bold text-foreground">
+              <span className="text-4xl font-semibold text-foreground">
                 {Math.round(current)}
               </span>
               <span className="text-sm text-muted-foreground">/ {target}g</span>

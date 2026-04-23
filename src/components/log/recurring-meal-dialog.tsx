@@ -77,7 +77,7 @@ export function RecurringMealDialog({
           定期メニューを追加
         </Button>
       </DialogTrigger>
-      <DialogContent className="rounded-xl mx-4">
+      <DialogContent className="rounded-lg mx-4">
         <DialogHeader>
           <DialogTitle>定期メニューを追加</DialogTitle>
         </DialogHeader>

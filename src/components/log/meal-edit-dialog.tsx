@@ -68,7 +68,7 @@ export function MealEditDialog({
         if (!isOpen) onClose();
       }}
     >
-      <DialogContent className="rounded-xl mx-4">
+      <DialogContent className="rounded-lg mx-4">
         <DialogHeader>
           <DialogTitle>食事を編集</DialogTitle>
         </DialogHeader>

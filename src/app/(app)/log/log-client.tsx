@@ -259,7 +259,7 @@ export function LogClient({
                         <p className="text-xs text-muted-foreground mb-1">
                           タンパク質
                         </p>
-                        <p className="font-bold text-primary text-xl">
+                        <p className="font-semibold text-primary text-xl">
                           {pendingResult.protein_g}g
                         </p>
                       </div>
@@ -267,7 +267,7 @@ export function LogClient({
                         <p className="text-xs text-muted-foreground mb-1">
                           カロリー
                         </p>
-                        <p className="font-bold text-foreground text-xl">
+                        <p className="font-semibold text-foreground text-xl">
                           {pendingResult.calorie_kcal}
                         </p>
                         <p className="text-xs text-muted-foreground">kcal</p>
