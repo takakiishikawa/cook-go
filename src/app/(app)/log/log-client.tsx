@@ -328,7 +328,8 @@ export function LogClient({
                 </div>
               </div>
             ) : (
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={analyzing}
                 className={cn(
@@ -368,7 +369,7 @@ export function LogClient({
                     </div>
                   </>
                 )}
-              </button>
+              </Button>
             )}
             <input
               ref={fileInputRef}
@@ -423,18 +424,22 @@ export function LogClient({
                         </div>
                       </div>
                       <div className="flex gap-0.5">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => setEditingMeal(meal)}
-                          className="p-1.5 hover:bg-muted rounded-md"
+                          className="p-1.5 hover:bg-muted rounded-md h-auto"
                         >
                           <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => deleteMeal(meal.id)}
-                          className="p-1.5 hover:bg-destructive/10 rounded-md"
+                          className="p-1.5 hover:bg-destructive/10 rounded-md h-auto"
                         >
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))}

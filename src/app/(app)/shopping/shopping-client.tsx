@@ -312,12 +312,14 @@ export function ShoppingClient({
                           </p>
                         )}
                       </div>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => deleteItem(item.id)}
-                        className="p-1 hover:bg-muted rounded-md flex-shrink-0"
+                        className="flex-shrink-0"
                       >
                         <Trash2 className="w-4 h-4 text-muted-foreground" />
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -329,12 +331,14 @@ export function ShoppingClient({
                 title="購入済み"
                 description={`${checked.length}品`}
                 actions={
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={clearChecked}
-                    className="text-sm text-destructive font-medium hover:underline"
+                    className="text-sm text-destructive font-medium hover:underline h-auto p-0"
                   >
                     クリア
-                  </button>
+                  </Button>
                 }
               >
                 <div className="space-y-1.5">
@@ -352,12 +356,14 @@ export function ShoppingClient({
                       <span className="flex-1 text-sm line-through text-muted-foreground">
                         {item.name}
                       </span>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => deleteItem(item.id)}
-                        className="p-1 hover:bg-background rounded-md flex-shrink-0"
+                        className="flex-shrink-0"
                       >
                         <Trash2 className="w-4 h-4 text-muted-foreground" />
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
