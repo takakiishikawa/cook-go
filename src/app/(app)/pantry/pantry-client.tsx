@@ -306,9 +306,11 @@ export function PantryClient({
                     >
                       {item.name}
                     </span>
-                    <button
+                    <Button
                       onClick={() => toggleStock(item)}
-                      className="flex-shrink-0"
+                      variant="ghost"
+                      size="sm"
+                      className="flex-shrink-0 p-0 h-auto hover:bg-transparent"
                     >
                       {item.in_stock ? (
                         <Badge variant="secondary" className="cursor-pointer">
@@ -319,15 +321,17 @@ export function PantryClient({
                           切れた
                         </Badge>
                       )}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => deleteItem(item)}
                       disabled={deletingId === item.id}
-                      className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                      variant="ghost"
+                      size="sm"
+                      className="p-1.5 h-auto text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       aria-label="削除"
                     >
                       <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
