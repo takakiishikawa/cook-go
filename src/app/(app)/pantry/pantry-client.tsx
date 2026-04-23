@@ -176,7 +176,7 @@ export function PantryClient({
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">在庫あり</p>
-              <p className="text-2xl font-bold text-primary mt-1">
+              <p className="text-2xl font-semibold text-primary mt-1">
                 {inStockCount}
                 <span className="text-sm font-normal text-muted-foreground ml-1">
                   品
@@ -189,7 +189,7 @@ export function PantryClient({
               <p className="text-xs text-muted-foreground">在庫切れ</p>
               <p
                 className={cn(
-                  "text-2xl font-bold mt-1",
+                  "text-2xl font-semibold mt-1",
                   outOfStockCount > 0 ? "text-destructive" : "text-foreground",
                 )}
               >

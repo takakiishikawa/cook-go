@@ -207,7 +207,7 @@ export function ShoppingClient({
                     <div className="flex items-center gap-4">
                       <ItemImage name={item.name} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-2xl font-bold text-foreground">
+                        <p className="text-2xl font-semibold text-foreground">
                           {item.name}
                         </p>
                         {t?.en && (

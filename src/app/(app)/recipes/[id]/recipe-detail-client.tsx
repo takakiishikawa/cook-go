@@ -134,7 +134,7 @@ export function RecipeDetailClient({
               <Beef className="w-4 h-4 text-primary flex-shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">タンパク質</p>
-                <p className="text-sm font-bold text-primary">
+                <p className="text-sm font-semibold text-primary">
                   {recipe.protein_g_per_serving}g
                 </p>
               </div>
@@ -145,7 +145,7 @@ export function RecipeDetailClient({
               <Flame className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">カロリー</p>
-                <p className="text-sm font-bold text-foreground">
+                <p className="text-sm font-semibold text-foreground">
                   {recipe.calorie_kcal_per_serving}kcal
                 </p>
               </div>
@@ -156,7 +156,7 @@ export function RecipeDetailClient({
               <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">調理時間</p>
-                <p className="text-sm font-bold text-foreground">
+                <p className="text-sm font-semibold text-foreground">
                   {recipe.prep_time_min}分
                 </p>
               </div>
@@ -167,7 +167,7 @@ export function RecipeDetailClient({
               <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">食分</p>
-                <p className="text-sm font-bold text-foreground">
+                <p className="text-sm font-semibold text-foreground">
                   {recipe.servings}食分
                 </p>
               </div>
@@ -274,7 +274,7 @@ export function RecipeDetailClient({
                   >
                     <div
                       className={cn(
-                        "w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold",
+                        "w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-semibold",
                         done
                           ? "bg-primary text-primary-foreground"
                           : "bg-surface-subtle text-muted-foreground",

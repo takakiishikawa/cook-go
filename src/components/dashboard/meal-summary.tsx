@@ -74,7 +74,7 @@ export function MealSummary({ meals }: MealSummaryProps) {
                   </p>
                 </div>
                 {hasLog ? (
-                  <p className="text-lg font-bold text-primary leading-none">
+                  <p className="text-lg font-semibold text-primary leading-none">
                     {Math.round(totalProtein)}g
                   </p>
                 ) : (

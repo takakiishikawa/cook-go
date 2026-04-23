@@ -109,7 +109,7 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
               {recipes.map((recipe) => (
                 <Link key={recipe.id} href={`/recipes/${recipe.id}`}>
-                  <Card className="overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col">
+                  <Card className="overflow-hidden hover:border border-border transition-shadow h-full flex flex-col">
                     <div className="overflow-hidden">
                       <RecipeImage title={recipe.title} />
                     </div>
