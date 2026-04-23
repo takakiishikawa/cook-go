@@ -9,25 +9,43 @@ const client = new Anthropic();
 export async function POST() {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-    const [mealsResult, pantryResult, pastRecipesResult, settingsResult] = await Promise.all([
-      supabase.schema(DB_SCHEMA).from("meal_logs")
-        .select("description, protein_g, logged_at, meal_type")
-        .eq("user_id", user.id).gte("logged_at", oneWeekAgo.toISOString()),
-      supabase.schema(DB_SCHEMA).from("pantry_items")
-        .select("name, category, in_stock")
-        .eq("user_id", user.id).eq("in_stock", true),
-      supabase.schema(DB_SCHEMA).from("recipes")
-        .select("title").eq("user_id", user.id)
-        .order("created_at", { ascending: false }).limit(20),
-      supabase.schema(DB_SCHEMA).from("user_settings")
-        .select("protein_target_g").eq("user_id", user.id).single(),
-    ]);
+    const [mealsResult, pantryResult, pastRecipesResult, settingsResult] =
+      await Promise.all([
+        supabase
+          .schema(DB_SCHEMA)
+          .from("meal_logs")
+          .select("description, protein_g, logged_at, meal_type")
+          .eq("user_id", user.id)
+          .gte("logged_at", oneWeekAgo.toISOString()),
+        supabase
+          .schema(DB_SCHEMA)
+          .from("pantry_items")
+          .select("name, category, in_stock")
+          .eq("user_id", user.id)
+          .eq("in_stock", true),
+        supabase
+          .schema(DB_SCHEMA)
+          .from("recipes")
+          .select("title")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(20),
+        supabase
+          .schema(DB_SCHEMA)
+          .from("user_settings")
+          .select("protein_target_g")
+          .eq("user_id", user.id)
+          .single(),
+      ]);
 
     const meals = mealsResult.data ?? [];
     const pantryItems = pantryResult.data ?? [];
@@ -45,13 +63,13 @@ export async function POST() {
 - 直近7日間の平均タンパク質摂取量: ${Math.round(avgDailyProtein)}g/日
 
 【直近1週間の食事ログ】
-${meals.map(m => `- ${m.description ?? "不明"} (${m.protein_g}g タンパク質)`).join("\n") || "記録なし"}
+${meals.map((m) => `- ${m.description ?? "不明"} (${m.protein_g}g タンパク質)`).join("\n") || "記録なし"}
 
 【現在のストック食材】
-${pantryItems.map(p => p.name).join(", ") || "なし"}
+${pantryItems.map((p) => p.name).join(", ") || "なし"}
 
 【過去に提案・調理した料理（重複を避ける）】
-${pastRecipes.map(r => r.title).join(", ") || "なし"}
+${pastRecipes.map((r) => r.title).join(", ") || "なし"}
 
 【固定条件】
 - タンパク質多め（1食あたり30g以上推奨）
@@ -87,7 +105,8 @@ ${pastRecipes.map(r => r.title).join(", ") || "なし"}
       messages: [{ role: "user", content: prompt }],
     });
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "";
+    const text =
+      response.content[0].type === "text" ? response.content[0].text : "";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("No JSON in response");
 
@@ -98,7 +117,7 @@ ${pastRecipes.map(r => r.title).join(", ") || "なし"}
       throw new Error("Invalid JSON in response");
     }
 
-    const pantryNames = new Set(pantryItems.map(p => p.name.toLowerCase()));
+    const pantryNames = new Set(pantryItems.map((p) => p.name.toLowerCase()));
     const inserts = parsed.recipes.map((r: SuggestedRecipe) => ({
       user_id: user.id,
       title: r.title,
@@ -108,7 +127,7 @@ ${pastRecipes.map(r => r.title).join(", ") || "なし"}
       prep_time_min: r.prep_time_min,
       is_meal_prep_friendly: r.is_meal_prep_friendly ?? true,
       servings: r.servings ?? 1,
-      ingredients: r.ingredients.map(ing => ({
+      ingredients: r.ingredients.map((ing) => ({
         ...ing,
         in_pantry: pantryNames.has(ing.name.toLowerCase()),
       })),
@@ -127,6 +146,9 @@ ${pastRecipes.map(r => r.title).join(", ") || "なし"}
     return NextResponse.json({ recipes: savedRecipes });
   } catch (error) {
     console.error("Recipe suggestion error:", error);
-    return NextResponse.json({ error: "レシピ提案に失敗しました" }, { status: 500 });
+    return NextResponse.json(
+      { error: "レシピ提案に失敗しました" },
+      { status: 500 },
+    );
   }
 }

@@ -14,21 +14,38 @@ interface Props {
   user: User;
   settings: Partial<UserSettings>;
   todayMeals: MealLog[];
-  weekMeals: Array<{ logged_at: string; protein_g: number; calorie_kcal: number | null }>;
+  weekMeals: Array<{
+    logged_at: string;
+    protein_g: number;
+    calorie_kcal: number | null;
+  }>;
   recipes: Recipe[];
 }
 
-export function DashboardClient({ user, settings, todayMeals, weekMeals, recipes }: Props) {
+export function DashboardClient({
+  user,
+  settings,
+  todayMeals,
+  weekMeals,
+  recipes,
+}: Props) {
   const proteinTarget = settings.protein_target_g ?? 108;
-  const totalProtein = todayMeals.reduce((sum, m) => sum + Number(m.protein_g), 0);
-  const totalCalorie = todayMeals.reduce((sum, m) => sum + Number(m.calorie_kcal ?? 0), 0);
+  const totalProtein = todayMeals.reduce(
+    (sum, m) => sum + Number(m.protein_g),
+    0,
+  );
+  const totalCalorie = todayMeals.reduce(
+    (sum, m) => sum + Number(m.calorie_kcal ?? 0),
+    0,
+  );
   const pct = Math.min(Math.round((totalProtein / proteinTarget) * 100), 100);
   const remaining = Math.max(proteinTarget - totalProtein, 0);
   const userName = user.user_metadata?.full_name?.split(" ")[0] ?? "";
 
   const today = new Date();
   const hour = today.getHours();
-  const greeting = hour < 12 ? "おはようございます" : hour < 18 ? "こんにちは" : "こんばんは";
+  const greeting =
+    hour < 12 ? "おはようございます" : hour < 18 ? "こんにちは" : "こんばんは";
   const weekDay = ["日", "月", "火", "水", "木", "金", "土"][today.getDay()];
 
   return (
@@ -59,11 +76,15 @@ export function DashboardClient({ user, settings, todayMeals, weekMeals, recipes
               description: `目標 ${proteinTarget}g`,
               progress: pct,
               icon: <Beef className="w-4 h-4" />,
-              trend: totalProtein >= proteinTarget
-                ? { direction: "up" as const, value: "目標達成！" }
-                : remaining > 0
-                  ? { direction: "neutral" as const, value: `あと ${Math.round(remaining)}g` }
-                  : undefined,
+              trend:
+                totalProtein >= proteinTarget
+                  ? { direction: "up" as const, value: "目標達成！" }
+                  : remaining > 0
+                    ? {
+                        direction: "neutral" as const,
+                        value: `あと ${Math.round(remaining)}g`,
+                      }
+                    : undefined,
             },
             {
               title: "今日のカロリー",

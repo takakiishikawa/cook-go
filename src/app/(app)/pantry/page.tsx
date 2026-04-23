@@ -31,14 +31,20 @@ const PRESET_ITEMS = [
 
 export default async function PantryPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
   const count = await db.pantry.count(supabase, user.id);
   if (count === 0) {
     await db.pantry.insertMany(
       supabase,
-      PRESET_ITEMS.map(item => ({ user_id: user.id, ...item, in_stock: false })),
+      PRESET_ITEMS.map((item) => ({
+        user_id: user.id,
+        ...item,
+        in_stock: false,
+      })),
     );
   }
 

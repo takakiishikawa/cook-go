@@ -7,6 +7,6 @@ export function DarkModeInit() {
     }
     var t=localStorage.getItem('theme')||'light';
     applyTheme(t);
-  })();`
-  return <script dangerouslySetInnerHTML={{ __html: script }} />
+  })();`;
+  return <script dangerouslySetInnerHTML={{ __html: script }} />;
 }

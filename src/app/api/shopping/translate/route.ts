@@ -29,15 +29,23 @@ ${names.map((n: string) => `- ${n}`).join("\n")}`,
       ],
     });
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "{}";
+    const text =
+      response.content[0].type === "text" ? response.content[0].text : "{}";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return NextResponse.json({ translations: {} } satisfies TranslateResponse);
+    if (!jsonMatch)
+      return NextResponse.json({
+        translations: {},
+      } satisfies TranslateResponse);
 
     let translations: TranslateResponse["translations"];
     try {
-      translations = JSON.parse(jsonMatch[0]) as TranslateResponse["translations"];
+      translations = JSON.parse(
+        jsonMatch[0],
+      ) as TranslateResponse["translations"];
     } catch {
-      return NextResponse.json({ translations: {} } satisfies TranslateResponse);
+      return NextResponse.json({
+        translations: {},
+      } satisfies TranslateResponse);
     }
 
     return NextResponse.json({ translations } satisfies TranslateResponse);

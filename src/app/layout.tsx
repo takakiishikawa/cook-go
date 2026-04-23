@@ -22,20 +22,20 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "CookGo",
-  description: "撮るだけ・選ぶだけで、タンパク質の水位が見えて、料理のレパートリーが増えていく。",
+  description:
+    "撮るだけ・選ぶだけで、タンパク質の水位が見えて、料理のレパートリーが増えていく。",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "CookGo",
-    startupImage: [
-      { url: "/icons/icon-512.png" },
-    ],
+    startupImage: [{ url: "/icons/icon-512.png" }],
   },
   formatDetection: { telephone: false },
   openGraph: {
     type: "website",
     title: "CookGo",
-    description: "撮るだけ・選ぶだけで、タンパク質の水位が見えて、料理のレパートリーが増えていく。",
+    description:
+      "撮るだけ・選ぶだけで、タンパク質の水位が見えて、料理のレパートリーが増えていく。",
   },
 };
 
@@ -53,7 +53,11 @@ export default function RootLayout({
       <head>
         <DarkModeInit />
         <DesignTokens primaryColor="#16A34A" primaryColorHover="#15803D" />
-        <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
+        <link
+          rel="apple-touch-icon"
+          sizes="192x192"
+          href="/icons/icon-192.png"
+        />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="min-h-full">

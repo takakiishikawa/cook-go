@@ -25,7 +25,7 @@ export function useFoodImage(name: string | null): UseFoodImageResult {
     setError(false);
     setImageUrl(null);
     fetch(`/api/pantry/image?name=${encodeURIComponent(name)}`)
-      .then(r => r.json())
+      .then((r) => r.json())
       .then((d: { imageUrl: string | null }) => {
         if (!cancelled) {
           setImageUrl(d.imageUrl ?? null);
@@ -38,7 +38,9 @@ export function useFoodImage(name: string | null): UseFoodImageResult {
           setLoading(false);
         }
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [name]);
 
   return { imageUrl, loading, error };

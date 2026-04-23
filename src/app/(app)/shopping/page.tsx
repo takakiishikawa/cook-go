@@ -5,7 +5,9 @@ import { ShoppingClient } from "./shopping-client";
 
 export default async function ShoppingPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
   const items = await db.shopping.getAll(supabase, user.id);

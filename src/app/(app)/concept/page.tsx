@@ -29,17 +29,24 @@ export default function ConceptPageRoute() {
         }}
         productLogic={{
           steps: [
-            { title:"写真を撮る", description: "食事の写真を1枚撮影する" },
-            { title:"AIが解析", description: "栄養素・食事区分を自動判定" },
-            { title:"ログに蓄積", description: "タンパク質・カロリーが集計される" },
-            { title:"目標と照合", description: "今日の達成度が一目でわかる" },
-            { title:"レシピ提案", description: "食材庫に合わせてAIが次の食事を提案" },
+            { title: "写真を撮る", description: "食事の写真を1枚撮影する" },
+            { title: "AIが解析", description: "栄養素・食事区分を自動判定" },
+            {
+              title: "ログに蓄積",
+              description: "タンパク質・カロリーが集計される",
+            },
+            { title: "目標と照合", description: "今日の達成度が一目でわかる" },
+            {
+              title: "レシピ提案",
+              description: "食材庫に合わせてAIが次の食事を提案",
+            },
           ],
           outcome: "毎日のタンパク質目標を無理なく達成し、食事の多様性が広がる",
         }}
         resultMetric={{
           title: "タンパク質目標の週次達成率 80% 以上",
-          description: "ユーザーが設定した1日のタンパク質目標を、週の80%以上の日で達成できている状態",
+          description:
+            "ユーザーが設定した1日のタンパク質目標を、週の80%以上の日で達成できている状態",
         }}
         behaviorMetrics={[
           {
@@ -52,11 +59,13 @@ export default function ConceptPageRoute() {
           },
           {
             title: "食材庫の継続的な更新",
-            description: "食材庫を週1回以上更新し、在庫情報が最新状態を保っている",
+            description:
+              "食材庫を週1回以上更新し、在庫情報が最新状態を保っている",
           },
           {
             title: "買い物リストの利用",
-            description: "レシピから自動生成した買い物リストを月1回以上活用している",
+            description:
+              "レシピから自動生成した買い物リストを月1回以上活用している",
           },
         ]}
       />

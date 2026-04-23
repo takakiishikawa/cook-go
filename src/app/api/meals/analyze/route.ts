@@ -32,7 +32,9 @@ export async function POST(request: Request) {
     const body: MealAnalysisRequest = await request.json();
     const { image_base64, meal_type, recipe_url } = body;
 
-    const recipeContext = recipe_url ? await fetchRecipeContext(recipe_url) : "";
+    const recipeContext = recipe_url
+      ? await fetchRecipeContext(recipe_url)
+      : "";
     const contextNote = recipeContext
       ? `\n\n参照レシピ情報（栄養計算の参考に）:\n${recipeContext}`
       : "";
@@ -46,7 +48,11 @@ export async function POST(request: Request) {
           content: [
             {
               type: "image",
-              source: { type: "base64", media_type: "image/jpeg", data: image_base64 },
+              source: {
+                type: "base64",
+                media_type: "image/jpeg",
+                data: image_base64,
+              },
             },
             {
               type: "text",
@@ -67,7 +73,8 @@ export async function POST(request: Request) {
       ],
     });
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "";
+    const text =
+      response.content[0].type === "text" ? response.content[0].text : "";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("No JSON in response");
 

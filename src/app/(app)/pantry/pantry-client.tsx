@@ -4,8 +4,15 @@ import { useState, useEffect, useRef } from "react";
 import { Plus, ImageOff, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Button, Input, Badge, Card, CardContent,
-  TagGroup, Tag, Section, PageHeader,
+  Button,
+  Input,
+  Badge,
+  Card,
+  CardContent,
+  TagGroup,
+  Tag,
+  Section,
+  PageHeader,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { PantryItem } from "@/types/database";
@@ -18,7 +25,13 @@ interface PantryClientProps {
   items: PantryItem[];
 }
 
-function PantryItemImage({ imageUrl, name }: { imageUrl: string | null; name: string }) {
+function PantryItemImage({
+  imageUrl,
+  name,
+}: {
+  imageUrl: string | null;
+  name: string;
+}) {
   const [error, setError] = useState(false);
   if (!imageUrl || error) {
     return (
@@ -37,7 +50,10 @@ function PantryItemImage({ imageUrl, name }: { imageUrl: string | null; name: st
   );
 }
 
-export function PantryClient({ userId, items: initialItems }: PantryClientProps) {
+export function PantryClient({
+  userId,
+  items: initialItems,
+}: PantryClientProps) {
   const supabase = createClient();
   const [items, setItems] = useState<PantryItem[]>(initialItems);
   const [newName, setNewName] = useState("");
@@ -59,7 +75,9 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
     debounceTimer.current = setTimeout(async () => {
       setFetchingSuggest(true);
       try {
-        const res = await fetch(`/api/pantry/suggest?name=${encodeURIComponent(newName.trim())}`);
+        const res = await fetch(
+          `/api/pantry/suggest?name=${encodeURIComponent(newName.trim())}`,
+        );
         const data = await res.json();
         setPreviewImageUrl(data.imageUrl ?? null);
         setSuggestedCategory(data.category ?? "その他");
@@ -73,17 +91,29 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
   }, [newName]);
 
   const toggleStock = async (item: PantryItem) => {
-    const { error } = await db.pantry.update(supabase, item.id, { in_stock: !item.in_stock });
-    if (error) { toast.error("更新に失敗しました"); return; }
-    setItems(items.map(i => i.id === item.id ? { ...i, in_stock: !i.in_stock } : i));
+    const { error } = await db.pantry.update(supabase, item.id, {
+      in_stock: !item.in_stock,
+    });
+    if (error) {
+      toast.error("更新に失敗しました");
+      return;
+    }
+    setItems(
+      items.map((i) =>
+        i.id === item.id ? { ...i, in_stock: !i.in_stock } : i,
+      ),
+    );
   };
 
   const deleteItem = async (item: PantryItem) => {
     setDeletingId(item.id);
     const { error } = await db.pantry.delete(supabase, item.id);
     setDeletingId(null);
-    if (error) { toast.error("削除に失敗しました"); return; }
-    setItems(items.filter(i => i.id !== item.id));
+    if (error) {
+      toast.error("削除に失敗しました");
+      return;
+    }
+    setItems(items.filter((i) => i.id !== item.id));
     toast.success(`「${item.name}」を削除しました`);
   };
 
@@ -98,7 +128,10 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
       image_url: previewImageUrl,
     });
     setAdding(false);
-    if (error) { toast.error(`追加に失敗しました: ${error.message}`); return; }
+    if (error) {
+      toast.error(`追加に失敗しました: ${error.message}`);
+      return;
+    }
     setItems([...items, data as PantryItem]);
     setNewName("");
     setPreviewImageUrl(null);
@@ -106,19 +139,26 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
     toast.success("追加しました");
   };
 
-  const categories = ["すべて", ...Array.from(new Set(items.map(i => i.category ?? "その他")))];
-  const filteredItems = filterCategory === "すべて"
-    ? items
-    : items.filter(i => (i.category ?? "その他") === filterCategory);
+  const categories = [
+    "すべて",
+    ...Array.from(new Set(items.map((i) => i.category ?? "その他"))),
+  ];
+  const filteredItems =
+    filterCategory === "すべて"
+      ? items
+      : items.filter((i) => (i.category ?? "その他") === filterCategory);
 
-  const groupedItems = filteredItems.reduce<Record<string, PantryItem[]>>((acc, item) => {
-    const cat = item.category ?? "その他";
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(item);
-    return acc;
-  }, {});
+  const groupedItems = filteredItems.reduce<Record<string, PantryItem[]>>(
+    (acc, item) => {
+      const cat = item.category ?? "その他";
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(item);
+      return acc;
+    },
+    {},
+  );
 
-  const inStockCount = items.filter(i => i.in_stock).length;
+  const inStockCount = items.filter((i) => i.in_stock).length;
   const outOfStockCount = items.length - inStockCount;
 
   return (
@@ -136,14 +176,27 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">在庫あり</p>
-              <p className="text-2xl font-bold text-primary mt-1">{inStockCount}<span className="text-sm font-normal text-muted-foreground ml-1">品</span></p>
+              <p className="text-2xl font-bold text-primary mt-1">
+                {inStockCount}
+                <span className="text-sm font-normal text-muted-foreground ml-1">
+                  品
+                </span>
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">在庫切れ</p>
-              <p className={cn("text-2xl font-bold mt-1", outOfStockCount > 0 ? "text-destructive" : "text-foreground")}>
-                {outOfStockCount}<span className="text-sm font-normal text-muted-foreground ml-1">品</span>
+              <p
+                className={cn(
+                  "text-2xl font-bold mt-1",
+                  outOfStockCount > 0 ? "text-destructive" : "text-foreground",
+                )}
+              >
+                {outOfStockCount}
+                <span className="text-sm font-normal text-muted-foreground ml-1">
+                  品
+                </span>
               </p>
             </CardContent>
           </Card>
@@ -158,15 +211,23 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
                   <Input
                     placeholder="食材・調味料を追加..."
                     value={newName}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewName(e.target.value)}
-                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && addItem()}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setNewName(e.target.value)
+                    }
+                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
+                      e.key === "Enter" && addItem()
+                    }
                   />
                   <div className="flex items-center gap-1.5 min-h-[24px]">
                     {fetchingSuggest ? (
-                      <span className="text-xs text-muted-foreground">カテゴリー判定中...</span>
+                      <span className="text-xs text-muted-foreground">
+                        カテゴリー判定中...
+                      </span>
                     ) : newName.trim() ? (
                       <>
-                        <span className="text-xs text-muted-foreground">カテゴリー：</span>
+                        <span className="text-xs text-muted-foreground">
+                          カテゴリー：
+                        </span>
                         <Badge variant="outline">{suggestedCategory}</Badge>
                       </>
                     ) : null}
@@ -176,13 +237,24 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
                   {fetchingSuggest ? (
                     <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   ) : previewImageUrl ? (
-                    <img src={previewImageUrl} alt={newName} className="w-full h-full object-cover" />
+                    <img
+                      src={previewImageUrl}
+                      alt={newName}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
-                    <ImageOff className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+                    <ImageOff
+                      className="w-5 h-5 text-muted-foreground"
+                      strokeWidth={1.5}
+                    />
                   )}
                 </div>
               </div>
-              <Button onClick={addItem} disabled={adding || fetchingSuggest} className="w-full gap-2">
+              <Button
+                onClick={addItem}
+                disabled={adding || fetchingSuggest}
+                className="w-full gap-2"
+              >
                 <Plus className="w-4 h-4" />
                 {adding ? "追加中..." : "追加する"}
               </Button>
@@ -192,7 +264,7 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
 
         {/* Category filter */}
         <TagGroup wrap>
-          {categories.map(cat => (
+          {categories.map((cat) => (
             <Tag
               key={cat}
               color={filterCategory === cat ? "primary" : "default"}
@@ -208,28 +280,44 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
         <div className="space-y-5 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
           {Object.entries(groupedItems).map(([category, categoryItems]) => (
             <div key={category} className="space-y-2">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{category}</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                {category}
+              </h3>
               <div className="space-y-1">
-                {categoryItems.map(item => (
+                {categoryItems.map((item) => (
                   <div
                     key={item.id}
                     className={cn(
                       "flex items-center gap-3 bg-card border rounded-md px-3 py-2.5 transition-opacity",
-                      !item.in_stock && "opacity-50"
+                      !item.in_stock && "opacity-50",
                     )}
                   >
-                    <PantryItemImage imageUrl={item.image_url} name={item.name} />
-                    <span className={cn(
-                      "flex-1 text-sm",
-                      item.in_stock ? "text-foreground font-medium" : "text-muted-foreground"
-                    )}>
+                    <PantryItemImage
+                      imageUrl={item.image_url}
+                      name={item.name}
+                    />
+                    <span
+                      className={cn(
+                        "flex-1 text-sm",
+                        item.in_stock
+                          ? "text-foreground font-medium"
+                          : "text-muted-foreground",
+                      )}
+                    >
                       {item.name}
                     </span>
-                    <button onClick={() => toggleStock(item)} className="flex-shrink-0">
+                    <button
+                      onClick={() => toggleStock(item)}
+                      className="flex-shrink-0"
+                    >
                       {item.in_stock ? (
-                        <Badge variant="secondary" className="cursor-pointer">在庫あり</Badge>
+                        <Badge variant="secondary" className="cursor-pointer">
+                          在庫あり
+                        </Badge>
                       ) : (
-                        <Badge variant="destructive" className="cursor-pointer">切れた</Badge>
+                        <Badge variant="destructive" className="cursor-pointer">
+                          切れた
+                        </Badge>
                       )}
                     </button>
                     <button
@@ -249,7 +337,10 @@ export function PantryClient({ userId, items: initialItems }: PantryClientProps)
 
         {items.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
-            <ImageOff className="w-12 h-12 mx-auto mb-3 opacity-30" strokeWidth={1} />
+            <ImageOff
+              className="w-12 h-12 mx-auto mb-3 opacity-30"
+              strokeWidth={1}
+            />
             <p className="text-sm">食材がまだありません</p>
             <p className="text-xs mt-1">上のフォームから追加してください</p>
           </div>

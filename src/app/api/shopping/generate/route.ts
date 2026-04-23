@@ -7,8 +7,11 @@ import type { RecipeIngredient } from "@/types/database";
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body: ShoppingGenerateRequest = await request.json();
     const { recipe_id } = body;
@@ -32,24 +35,31 @@ export async function POST(request: Request) {
       .eq("user_id", user.id)
       .eq("in_stock", true);
 
-    const pantryNames = new Set((pantryItems ?? []).map((p: { name: string }) => p.name.toLowerCase()));
+    const pantryNames = new Set(
+      (pantryItems ?? []).map((p: { name: string }) => p.name.toLowerCase()),
+    );
     const ingredients = (recipe.ingredients as RecipeIngredient[]) ?? [];
-    const itemsToShop = ingredients.filter(ing => !pantryNames.has(ing.name.toLowerCase()));
+    const itemsToShop = ingredients.filter(
+      (ing) => !pantryNames.has(ing.name.toLowerCase()),
+    );
 
     if (itemsToShop.length === 0) {
-      return NextResponse.json({ message: "すべての食材がストックにあります", items: [] });
+      return NextResponse.json({
+        message: "すべての食材がストックにあります",
+        items: [],
+      });
     }
 
     const { data: insertedItems, error: insertError } = await supabase
       .schema(DB_SCHEMA)
       .from("shopping_list_items")
       .insert(
-        itemsToShop.map(ing => ({
+        itemsToShop.map((ing) => ({
           user_id: user.id,
           recipe_id,
           name: `${ing.name} ${ing.amount}`,
           checked: false,
-        }))
+        })),
       )
       .select();
 
@@ -58,6 +68,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ items: insertedItems });
   } catch (error) {
     console.error("Shopping list generate error:", error);
-    return NextResponse.json({ error: "買い物リスト生成に失敗しました" }, { status: 500 });
+    return NextResponse.json(
+      { error: "買い物リスト生成に失敗しました" },
+      { status: 500 },
+    );
   }
 }
