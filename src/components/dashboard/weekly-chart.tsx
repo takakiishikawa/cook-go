@@ -3,7 +3,11 @@
 import { ChartArea, type ChartConfig } from "@takaki/go-design-system";
 
 interface WeeklyChartProps {
-  weekMeals: Array<{ logged_at: string; protein_g: number; calorie_kcal: number | null }>;
+  weekMeals: Array<{
+    logged_at: string;
+    protein_g: number;
+    calorie_kcal: number | null;
+  }>;
   target: number;
 }
 
@@ -14,7 +18,10 @@ export function WeeklyChart({ weekMeals, target }: WeeklyChartProps) {
     const dateStr = d.toISOString().split("T")[0];
     const dayMeals = weekMeals.filter((m) => m.logged_at.startsWith(dateStr));
     const protein = dayMeals.reduce((sum, m) => sum + Number(m.protein_g), 0);
-    const calorie = dayMeals.reduce((sum, m) => sum + Number(m.calorie_kcal ?? 0), 0);
+    const calorie = dayMeals.reduce(
+      (sum, m) => sum + Number(m.calorie_kcal ?? 0),
+      0,
+    );
     const dow = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
     return {
       day: `${d.getMonth() + 1}/${d.getDate()}(${dow})`,
