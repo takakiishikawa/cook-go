@@ -13,7 +13,7 @@ import {
   Flame,
   Beef,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import {
   Button,
