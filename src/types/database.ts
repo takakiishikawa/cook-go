@@ -90,4 +90,10 @@ export const MEAL_TYPE_LABELS: Record<MealType, string> = {
   snack: "間食",
 };
 
-export const PANTRY_CATEGORIES = ["タンパク源", "野菜", "調味料", "炭水化物", "その他"] as const;
+export const PANTRY_CATEGORIES = [
+  "タンパク源",
+  "野菜",
+  "調味料",
+  "炭水化物",
+  "その他",
+] as const;

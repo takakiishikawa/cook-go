@@ -7,8 +7,8 @@
 
 /* CookGo primary color — fresh green evoking wholesome ingredients and healthy eating */
 :root {
-  --color-primary: #16A34A;
-  --color-primary-hover: #15803D;
+  --color-primary: #16a34a;
+  --color-primary-hover: #15803d;
 }
 
 /* font settings */
@@ -26,6 +26,8 @@
 
 @layer utilities {
   .card-shadow {
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 6px -1px rgb(0 0 0 / 0.04);
+    box-shadow:
+      0 1px 2px 0 rgb(0 0 0 / 0.04),
+      0 1px 6px -1px rgb(0 0 0 / 0.04);
   }
 }

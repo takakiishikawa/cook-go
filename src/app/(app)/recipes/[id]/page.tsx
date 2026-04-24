@@ -3,10 +3,16 @@ import { redirect, notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { RecipeDetailClient } from "./recipe-detail-client";
 
-export default async function RecipeDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function RecipeDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
   const [recipe, pantryItems] = await Promise.all([
@@ -19,7 +25,10 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
   return (
     <RecipeDetailClient
       recipe={recipe}
-      pantryItems={pantryItems.map(p => ({ name: p.name, in_stock: p.in_stock }))}
+      pantryItems={pantryItems.map((p) => ({
+        name: p.name,
+        in_stock: p.in_stock,
+      }))}
     />
   );
 }

@@ -5,10 +5,18 @@ import { useRouter } from "next/navigation";
 import { LogOut, User, Activity, Info } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Button, Input,
-  Avatar, AvatarFallback, AvatarImage,
-  SettingsGroup, SettingsItem, Separator,
-  SettingsPage, Card, CardContent, PageHeader,
+  Button,
+  Input,
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  SettingsGroup,
+  SettingsItem,
+  Separator,
+  SettingsPage,
+  Card,
+  CardContent,
+  PageHeader,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { UserSettings } from "@/types/database";
@@ -23,10 +31,18 @@ interface SettingsClientProps {
   settings: UserSettings | null;
 }
 
-export function SettingsClient({ userId, userEmail, userName, userAvatar, settings }: SettingsClientProps) {
+export function SettingsClient({
+  userId,
+  userEmail,
+  userName,
+  userAvatar,
+  settings,
+}: SettingsClientProps) {
   const router = useRouter();
   const supabase = createClient();
-  const [proteinTarget, setProteinTarget] = useState(String(settings?.protein_target_g ?? 108));
+  const [proteinTarget, setProteinTarget] = useState(
+    String(settings?.protein_target_g ?? 108),
+  );
   const [weightKg, setWeightKg] = useState(String(settings?.weight_kg ?? ""));
   const [saving, setSaving] = useState(false);
 
@@ -39,7 +55,10 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
       updated_at: new Date().toISOString(),
     });
     setSaving(false);
-    if (error) { toast.error("保存に失敗しました"); return; }
+    if (error) {
+      toast.error("保存に失敗しました");
+      return;
+    }
     toast.success("設定を保存しました");
   };
 
@@ -79,7 +98,9 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-lg font-semibold text-foreground">{userName || "ユーザー"}</p>
+                    <p className="text-lg font-semibold text-foreground">
+                      {userName || "ユーザー"}
+                    </p>
                     <p className="text-sm text-muted-foreground">{userEmail}</p>
                   </div>
                 </div>
@@ -114,10 +135,17 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
                           type="number"
                           placeholder="72"
                           value={weightKg}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWeightKg(e.target.value)}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            setWeightKg(e.target.value)
+                          }
                           className="w-24"
                         />
-                        <Button variant="outline" size="sm" onClick={calcProteinTarget} disabled={!weightKg}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={calcProteinTarget}
+                          disabled={!weightKg}
+                        >
                           自動計算
                         </Button>
                       </div>
@@ -129,7 +157,9 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
                       <Input
                         type="number"
                         value={proteinTarget}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProteinTarget(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setProteinTarget(e.target.value)
+                        }
                         className="w-24"
                       />
                     }
@@ -141,16 +171,28 @@ export function SettingsClient({ userId, userEmail, userName, userAvatar, settin
                     <div className="flex gap-2">
                       <Info className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">目標の参考値</p>
-                        <p className="text-xs text-muted-foreground">筋肉増量: 体重×1.6〜2.2g</p>
-                        <p className="text-xs text-muted-foreground">体脂肪減少: 体重×1.2〜1.6g</p>
-                        <p className="text-xs text-muted-foreground">一般維持: 体重×0.8〜1.0g</p>
+                        <p className="text-sm font-medium text-foreground">
+                          目標の参考値
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          筋肉増量: 体重×1.6〜2.2g
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          体脂肪減少: 体重×1.2〜1.6g
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          一般維持: 体重×0.8〜1.0g
+                        </p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Button onClick={handleSave} disabled={saving} className="w-full h-11">
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="w-full h-11"
+                >
                   {saving ? "保存中..." : "設定を保存する"}
                 </Button>
               </div>

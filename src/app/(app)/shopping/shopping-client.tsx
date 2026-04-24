@@ -4,13 +4,27 @@ import { useState } from "react";
 import { Plus, Trash2, ShoppingBag, Globe, ImageOff } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Button, Checkbox, Input, EmptyState, PageHeader,
-  Card, CardContent,
-  Sheet, SheetContent, SheetHeader, SheetTitle,
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription,
-  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-  Section, Badge,
+  Button,
+  Checkbox,
+  Input,
+  EmptyState,
+  PageHeader,
+  Card,
+  CardContent,
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Section,
+  Badge,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { ShoppingListItem } from "@/types/database";
@@ -45,21 +59,27 @@ function ItemImage({ name }: { name: string }) {
   );
 }
 
-export function ShoppingClient({ userId, items: initialItems }: ShoppingClientProps) {
+export function ShoppingClient({
+  userId,
+  items: initialItems,
+}: ShoppingClientProps) {
   const supabase = createClient();
   const [items, setItems] = useState<ShoppingListItem[]>(initialItems);
   const [newItemName, setNewItemName] = useState("");
   const [adding, setAdding] = useState(false);
   const [storeMode, setStoreMode] = useState(false);
-  const [translations, setTranslations] = useState<Record<string, Translation>>({});
+  const [translations, setTranslations] = useState<Record<string, Translation>>(
+    {},
+  );
   const [translating, setTranslating] = useState(false);
-  const [pendingPantryItem, setPendingPantryItem] = useState<ShoppingListItem | null>(null);
+  const [pendingPantryItem, setPendingPantryItem] =
+    useState<ShoppingListItem | null>(null);
 
-  const unchecked = items.filter(i => !i.checked);
-  const checked = items.filter(i => i.checked);
+  const unchecked = items.filter((i) => !i.checked);
+  const checked = items.filter((i) => i.checked);
 
   const fetchTranslations = async (itemList: ShoppingListItem[]) => {
-    const names = itemList.map(i => i.name);
+    const names = itemList.map((i) => i.name);
     if (names.length === 0) return;
     setTranslating(true);
     try {
@@ -78,9 +98,16 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
   };
 
   const toggleItem = async (item: ShoppingListItem) => {
-    const { error } = await db.shopping.update(supabase, item.id, { checked: !item.checked });
-    if (error) { toast.error("更新に失敗しました"); return; }
-    setItems(items.map(i => i.id === item.id ? { ...i, checked: !i.checked } : i));
+    const { error } = await db.shopping.update(supabase, item.id, {
+      checked: !item.checked,
+    });
+    if (error) {
+      toast.error("更新に失敗しました");
+      return;
+    }
+    setItems(
+      items.map((i) => (i.id === item.id ? { ...i, checked: !i.checked } : i)),
+    );
     if (!item.checked) {
       setPendingPantryItem(item);
     }
@@ -89,21 +116,31 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
   const confirmAddToPantry = async () => {
     if (!pendingPantryItem) return;
     const itemName = pendingPantryItem.name.replace(/\s+\S+$/, "").trim();
-    await db.pantry.upsert(supabase, { user_id: userId, name: itemName, in_stock: true });
+    await db.pantry.upsert(supabase, {
+      user_id: userId,
+      name: itemName,
+      in_stock: true,
+    });
     toast.success(`${itemName}を食材庫に追加しました`);
     setPendingPantryItem(null);
   };
 
   const deleteItem = async (id: string) => {
     const { error } = await db.shopping.delete(supabase, id);
-    if (error) { toast.error("削除に失敗しました"); return; }
-    setItems(items.filter(i => i.id !== id));
+    if (error) {
+      toast.error("削除に失敗しました");
+      return;
+    }
+    setItems(items.filter((i) => i.id !== id));
   };
 
   const clearChecked = async () => {
-    const ids = checked.map(i => i.id);
+    const ids = checked.map((i) => i.id);
     const { error } = await db.shopping.deleteMany(supabase, ids);
-    if (error) { toast.error("削除に失敗しました"); return; }
+    if (error) {
+      toast.error("削除に失敗しました");
+      return;
+    }
     setItems(unchecked);
     toast.success(`${ids.length}件を削除しました`);
   };
@@ -111,9 +148,16 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
   const addItem = async () => {
     if (!newItemName.trim()) return;
     setAdding(true);
-    const { error, data } = await db.shopping.insert(supabase, { user_id: userId, name: newItemName.trim(), checked: false });
+    const { error, data } = await db.shopping.insert(supabase, {
+      user_id: userId,
+      name: newItemName.trim(),
+      checked: false,
+    });
     setAdding(false);
-    if (error) { toast.error("追加に失敗しました"); return; }
+    if (error) {
+      toast.error("追加に失敗しました");
+      return;
+    }
     setItems([data as ShoppingListItem, ...items]);
     setNewItemName("");
   };
@@ -123,7 +167,10 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
       <AppHeader />
 
       {/* Pantry add confirm dialog */}
-      <AlertDialog open={!!pendingPantryItem} onOpenChange={(open) => !open && setPendingPantryItem(null)}>
+      <AlertDialog
+        open={!!pendingPantryItem}
+        onOpenChange={(open) => !open && setPendingPantryItem(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>食材庫に追加しますか？</AlertDialogTitle>
@@ -133,7 +180,9 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>スキップ</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAddToPantry}>追加する</AlertDialogAction>
+            <AlertDialogAction onClick={confirmAddToPantry}>
+              追加する
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -146,9 +195,11 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
           </SheetHeader>
           <div className="flex-1 overflow-y-auto space-y-3 pt-4">
             {translating && (
-              <p className="text-center py-4 text-sm text-muted-foreground">翻訳中...</p>
+              <p className="text-center py-4 text-sm text-muted-foreground">
+                翻訳中...
+              </p>
             )}
-            {unchecked.map(item => {
+            {unchecked.map((item) => {
               const t = translations[item.name];
               return (
                 <Card key={item.id}>
@@ -156,9 +207,19 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
                     <div className="flex items-center gap-4">
                       <ItemImage name={item.name} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-2xl font-bold text-foreground">{item.name}</p>
-                        {t?.en && <p className="text-lg font-medium text-muted-foreground">{t.en}</p>}
-                        {t?.vi && <p className="text-lg font-semibold text-info">{t.vi}</p>}
+                        <p className="text-2xl font-semibold text-foreground">
+                          {item.name}
+                        </p>
+                        {t?.en && (
+                          <p className="text-lg font-medium text-muted-foreground">
+                            {t.en}
+                          </p>
+                        )}
+                        {t?.vi && (
+                          <p className="text-lg font-semibold text-info">
+                            {t.vi}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -166,7 +227,9 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
               );
             })}
             {unchecked.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">未購入アイテムがありません</p>
+              <p className="text-center text-muted-foreground py-8">
+                未購入アイテムがありません
+              </p>
             )}
           </div>
         </SheetContent>
@@ -175,18 +238,29 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
       <div className="px-4 md:px-8 pt-5 pb-8 space-y-5 max-w-2xl">
         <PageHeader
           title="買い物リスト"
-          description={unchecked.length > 0 ? `未購入 ${unchecked.length}品` : checked.length > 0 ? "すべて購入済み" : undefined}
-          actions={unchecked.length > 0 ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => { setStoreMode(true); fetchTranslations(unchecked); }}
-              className="gap-1.5"
-            >
-              <Globe className="w-3.5 h-3.5" />
-              店員に見せる
-            </Button>
-          ) : undefined}
+          description={
+            unchecked.length > 0
+              ? `未購入 ${unchecked.length}品`
+              : checked.length > 0
+                ? "すべて購入済み"
+                : undefined
+          }
+          actions={
+            unchecked.length > 0 ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setStoreMode(true);
+                  fetchTranslations(unchecked);
+                }}
+                className="gap-1.5"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                店員に見せる
+              </Button>
+            ) : undefined
+          }
         />
 
         {/* Add item */}
@@ -194,8 +268,12 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
           <Input
             placeholder="アイテムを追加..."
             value={newItemName}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewItemName(e.target.value)}
-            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && addItem()}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setNewItemName(e.target.value)
+            }
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
+              e.key === "Enter" && addItem()
+            }
             className="flex-1"
           />
           <Button onClick={addItem} disabled={adding} size="icon">
@@ -215,20 +293,33 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
               <Section title={`未購入`} description={`${unchecked.length}品`}>
                 <div className="space-y-1.5">
                   {unchecked.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3 bg-card border border-border rounded-md px-3 py-2.5">
-                      <Checkbox checked={false} onCheckedChange={() => toggleItem(item)} className="flex-shrink-0" />
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-3 bg-card border border-border rounded-md px-3 py-2.5"
+                    >
+                      <Checkbox
+                        checked={false}
+                        onCheckedChange={() => toggleItem(item)}
+                        className="flex-shrink-0"
+                      />
                       <ItemImage name={item.name} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium">{item.name}</p>
                         {translations[item.name] && (
                           <p className="text-xs text-muted-foreground">
-                            {translations[item.name].en} · {translations[item.name].vi}
+                            {translations[item.name].en} ·{" "}
+                            {translations[item.name].vi}
                           </p>
                         )}
                       </div>
-                      <button onClick={() => deleteItem(item.id)} className="p-1 hover:bg-muted rounded-md flex-shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteItem(item.id)}
+                        className="flex-shrink-0"
+                      >
                         <Trash2 className="w-4 h-4 text-muted-foreground" />
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -240,20 +331,39 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
                 title="購入済み"
                 description={`${checked.length}品`}
                 actions={
-                  <button onClick={clearChecked} className="text-sm text-destructive font-medium hover:underline">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearChecked}
+                    className="text-sm text-destructive font-medium hover:underline h-auto p-0"
+                  >
                     クリア
-                  </button>
+                  </Button>
                 }
               >
                 <div className="space-y-1.5">
                   {checked.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3 bg-muted border border-border rounded-md px-3 py-2.5 opacity-60">
-                      <Checkbox checked={true} onCheckedChange={() => toggleItem(item)} className="flex-shrink-0" />
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-3 bg-muted border border-border rounded-md px-3 py-2.5 opacity-60"
+                    >
+                      <Checkbox
+                        checked={true}
+                        onCheckedChange={() => toggleItem(item)}
+                        className="flex-shrink-0"
+                      />
                       <ItemImage name={item.name} />
-                      <span className="flex-1 text-sm line-through text-muted-foreground">{item.name}</span>
-                      <button onClick={() => deleteItem(item.id)} className="p-1 hover:bg-background rounded-md flex-shrink-0">
+                      <span className="flex-1 text-sm line-through text-muted-foreground">
+                        {item.name}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteItem(item.id)}
+                        className="flex-shrink-0"
+                      >
                         <Trash2 className="w-4 h-4 text-muted-foreground" />
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
