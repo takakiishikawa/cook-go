@@ -10,10 +10,9 @@ export default async function LogPage() {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [todayMeals, recentMeals, recurringMeals] = await Promise.all([
+  const [todayMeals, recentMeals] = await Promise.all([
     db.meals.getToday(supabase, user.id, today),
     db.meals.getRecent(supabase, user.id, today),
-    db.recurring.getAll(supabase, user.id),
   ]);
 
   return (
@@ -21,7 +20,6 @@ export default async function LogPage() {
       userId={user.id}
       todayMeals={todayMeals}
       recentMeals={recentMeals}
-      recurringMeals={recurringMeals}
     />
   );
 }

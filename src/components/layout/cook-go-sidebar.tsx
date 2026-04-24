@@ -34,8 +34,8 @@ const GO_APPS = [
 ] as const;
 
 const navItems = [
-  { href: "/dashboard", icon: Home, label: "ホーム" },
-  { href: "/log", icon: PlusCircle, label: "食事ログ" },
+  { href: "/dashboard", icon: Home, label: "ダッシュボード" },
+  { href: "/log", icon: PlusCircle, label: "記録" },
   { href: "/recipes", icon: BookOpen, label: "レシピ" },
   { href: "/shopping", icon: ShoppingCart, label: "買い物リスト" },
   { href: "/pantry", icon: Archive, label: "食材庫" },

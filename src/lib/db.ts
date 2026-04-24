@@ -87,6 +87,9 @@ export const db = {
         .eq("id", id).eq("user_id", userId).single();
       return data as Recipe | null;
     },
+    update: async (supabase: SupabaseClient, id: string, values: Partial<Recipe>) => {
+      return s(supabase).from("recipes").update(values).eq("id", id).select().single();
+    },
   },
 
   pantry: {

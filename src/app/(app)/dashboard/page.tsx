@@ -13,11 +13,10 @@ export default async function DashboardPage() {
   const sevenDaysAgo = new Date(today);
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
-  const [settings, todayMeals, weekMeals, recipes] = await Promise.all([
+  const [settings, todayMeals, weekMeals] = await Promise.all([
     db.settings.get(supabase, user.id),
     db.meals.getToday(supabase, user.id, todayStr),
     db.meals.getWeek(supabase, user.id, sevenDaysAgo.toISOString()),
-    db.recipes.getAll(supabase, user.id, 3),
   ]);
 
   return (
@@ -26,7 +25,6 @@ export default async function DashboardPage() {
       settings={settings ?? { protein_target_g: 108, weight_kg: null }}
       todayMeals={todayMeals}
       weekMeals={weekMeals}
-      recipes={recipes}
     />
   );
 }

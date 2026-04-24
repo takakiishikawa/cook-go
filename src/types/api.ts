@@ -1,6 +1,7 @@
 // Meal analysis
 export interface MealAnalysisRequest {
   image_base64: string;
+  media_type?: string;
   meal_type?: string;
   recipe_url?: string;
 }

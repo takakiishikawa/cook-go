@@ -30,7 +30,12 @@ async function fetchRecipeContext(url: string): Promise<string> {
 export async function POST(request: Request) {
   try {
     const body: MealAnalysisRequest = await request.json();
-    const { image_base64, meal_type, recipe_url } = body;
+    const { image_base64, media_type, meal_type, recipe_url } = body;
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
+    type AllowedType = typeof allowedTypes[number];
+    const resolvedMediaType: AllowedType = allowedTypes.includes(media_type as AllowedType)
+      ? (media_type as AllowedType)
+      : "image/jpeg";
 
     const recipeContext = recipe_url ? await fetchRecipeContext(recipe_url) : "";
     const contextNote = recipeContext
@@ -46,7 +51,7 @@ export async function POST(request: Request) {
           content: [
             {
               type: "image",
-              source: { type: "base64", media_type: "image/jpeg", data: image_base64 },
+              source: { type: "base64", media_type: resolvedMediaType, data: image_base64 },
             },
             {
               type: "text",

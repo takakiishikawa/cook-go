@@ -55,6 +55,7 @@ export interface Recipe {
   servings: number;
   prep_time_min: number | null;
   is_meal_prep_friendly: boolean;
+  is_tried: boolean;
   ingredients: RecipeIngredient[] | null;
   steps: RecipeStep[] | null;
   ai_generated: boolean;
