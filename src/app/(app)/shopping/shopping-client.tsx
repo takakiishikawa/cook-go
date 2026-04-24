@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Trash2, ShoppingBag, Globe, ImageOff } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@takaki/go-design-system";
 import {
   Button,
   Checkbox,

@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
+import { toast } from "@takaki/go-design-system";
 import { MealLog, MealType, MEAL_TYPE_LABELS } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { db } from "@/lib/db";
