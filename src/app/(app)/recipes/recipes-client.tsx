@@ -58,7 +58,7 @@ function RecipeCard({
   return (
     <div className="relative">
       <Link href={`/recipes/${recipe.id}`}>
-        <Card className="overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col">
+        <Card className="overflow-hidden hover:border border-border transition-shadow h-full flex flex-col">
           <div className="overflow-hidden">
             <RecipeImage title={recipe.title} />
           </div>
