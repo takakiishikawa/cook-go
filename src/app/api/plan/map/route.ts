@@ -44,11 +44,22 @@ function generateDates(
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body: PlanMapRequest = await request.json();
-    const { recipe_id, planned_date, meal_type, servings = 1, repeat_rule = "none", repeat_days = [], repeat_until } = body;
+    const {
+      recipe_id,
+      planned_date,
+      meal_type,
+      servings = 1,
+      repeat_rule = "none",
+      repeat_days = [],
+      repeat_until,
+    } = body;
 
     // Validate recipe belongs to user
     const { data: recipe } = await supabase
@@ -58,9 +69,15 @@ export async function POST(request: Request) {
       .eq("id", recipe_id)
       .eq("user_id", user.id)
       .single();
-    if (!recipe) return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+    if (!recipe)
+      return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
 
-    const dates = generateDates(planned_date, repeat_rule, repeat_days, repeat_until);
+    const dates = generateDates(
+      planned_date,
+      repeat_rule,
+      repeat_days,
+      repeat_until,
+    );
 
     const inserts = dates.map((date) => ({
       user_id: user.id,
@@ -80,23 +97,39 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
-    const total_protein_g = Math.round((recipe.protein_g_per_serving ?? 0) * servings * dates.length);
+    const total_protein_g = Math.round(
+      (recipe.protein_g_per_serving ?? 0) * servings * dates.length,
+    );
 
-    return NextResponse.json({ plans_created: dates.length, total_protein_g } satisfies PlanMapResponse);
+    return NextResponse.json({
+      plans_created: dates.length,
+      total_protein_g,
+    } satisfies PlanMapResponse);
   } catch (error) {
     console.error("Plan map error:", error);
-    return NextResponse.json({ error: "献立の登録に失敗しました" }, { status: 500 });
+    return NextResponse.json(
+      { error: "献立の登録に失敗しました" },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { id } = await request.json() as { id: string };
-    await supabase.schema(DB_SCHEMA).from("meal_plans").delete().eq("id", id).eq("user_id", user.id);
+    const { id } = (await request.json()) as { id: string };
+    await supabase
+      .schema(DB_SCHEMA)
+      .from("meal_plans")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id);
 
     return NextResponse.json({ ok: true });
   } catch {

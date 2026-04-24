@@ -55,7 +55,15 @@ export interface MealPlan {
 }
 
 export interface MealPlanWithRecipe extends MealPlan {
-  recipe: Pick<Recipe, "id" | "title" | "title_en" | "image_url" | "protein_g_per_serving" | "calorie_kcal_per_serving">;
+  recipe: Pick<
+    Recipe,
+    | "id"
+    | "title"
+    | "title_en"
+    | "image_url"
+    | "protein_g_per_serving"
+    | "calorie_kcal_per_serving"
+  >;
 }
 
 export interface PantryItem {

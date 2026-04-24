@@ -6,7 +6,8 @@ const UNSPLASH_CACHE: Record<string, { url: string; expires: number }> = {};
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("query")?.trim();
-  if (!query) return NextResponse.json({ imageUrl: null } satisfies ImageResponse);
+  if (!query)
+    return NextResponse.json({ imageUrl: null } satisfies ImageResponse);
 
   const now = Date.now();
   const cached = UNSPLASH_CACHE[query];
@@ -20,10 +21,15 @@ export async function GET(request: Request) {
     try {
       const res = await fetch(
         `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`,
-        { headers: { Authorization: `Client-ID ${key}` }, next: { revalidate: 86400 } },
+        {
+          headers: { Authorization: `Client-ID ${key}` },
+          next: { revalidate: 86400 },
+        },
       );
       if (res.ok) {
-        const data = await res.json() as { results?: Array<{ urls?: { regular?: string } }> };
+        const data = (await res.json()) as {
+          results?: Array<{ urls?: { regular?: string } }>;
+        };
         const url = data.results?.[0]?.urls?.regular ?? null;
         if (url) {
           UNSPLASH_CACHE[query] = { url, expires: now + 86400 * 1000 };
@@ -42,9 +48,11 @@ export async function GET(request: Request) {
       { next: { revalidate: 86400 } },
     );
     if (jaRes.ok) {
-      const data = await jaRes.json() as { thumbnail?: { source?: string } };
+      const data = (await jaRes.json()) as { thumbnail?: { source?: string } };
       if (data.thumbnail?.source) {
-        return NextResponse.json({ imageUrl: data.thumbnail.source } satisfies ImageResponse);
+        return NextResponse.json({
+          imageUrl: data.thumbnail.source,
+        } satisfies ImageResponse);
       }
     }
   } catch {

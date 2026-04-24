@@ -15,7 +15,9 @@ async function fetchUnsplashImage(query: string): Promise<string | null> {
       { headers: { Authorization: `Client-ID ${key}` } },
     );
     if (!res.ok) return null;
-    const data = await res.json() as { results?: Array<{ urls?: { regular?: string } }> };
+    const data = (await res.json()) as {
+      results?: Array<{ urls?: { regular?: string } }>;
+    };
     return data.results?.[0]?.urls?.regular ?? null;
   } catch {
     return null;
@@ -25,24 +27,61 @@ async function fetchUnsplashImage(query: string): Promise<string | null> {
 export async function POST() {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const [pantryResult, pastRecipesResult, settingsResult, plansResult] = await Promise.all([
-      supabase.schema(DB_SCHEMA).from("pantry_items").select("name, category, in_stock").eq("user_id", user.id).eq("in_stock", true),
-      supabase.schema(DB_SCHEMA).from("recipes").select("title").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
-      supabase.schema(DB_SCHEMA).from("user_settings").select("protein_target_g").eq("user_id", user.id).single(),
-      supabase.schema(DB_SCHEMA).from("meal_plans").select("planned_date, servings, recipe:recipes(protein_g_per_serving)").eq("user_id", user.id).gte("planned_date", new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0]),
-    ]);
+    const [pantryResult, pastRecipesResult, settingsResult, plansResult] =
+      await Promise.all([
+        supabase
+          .schema(DB_SCHEMA)
+          .from("pantry_items")
+          .select("name, category, in_stock")
+          .eq("user_id", user.id)
+          .eq("in_stock", true),
+        supabase
+          .schema(DB_SCHEMA)
+          .from("recipes")
+          .select("title")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(20),
+        supabase
+          .schema(DB_SCHEMA)
+          .from("user_settings")
+          .select("protein_target_g")
+          .eq("user_id", user.id)
+          .single(),
+        supabase
+          .schema(DB_SCHEMA)
+          .from("meal_plans")
+          .select(
+            "planned_date, servings, recipe:recipes(protein_g_per_serving)",
+          )
+          .eq("user_id", user.id)
+          .gte(
+            "planned_date",
+            new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0],
+          ),
+      ]);
 
     const pantryItems = pantryResult.data ?? [];
     const pastRecipes = pastRecipesResult.data ?? [];
     const proteinTarget = settingsResult.data?.protein_target_g ?? 108;
 
-    const recentPlans = (plansResult.data ?? []) as unknown as Array<{ servings: number; recipe: { protein_g_per_serving: number | null } }>;
-    const avgDailyProtein = recentPlans.length > 0
-      ? recentPlans.reduce((s, p) => s + (p.recipe?.protein_g_per_serving ?? 0) * p.servings, 0) / 7
-      : 0;
+    const recentPlans = (plansResult.data ?? []) as unknown as Array<{
+      servings: number;
+      recipe: { protein_g_per_serving: number | null };
+    }>;
+    const avgDailyProtein =
+      recentPlans.length > 0
+        ? recentPlans.reduce(
+            (s, p) => s + (p.recipe?.protein_g_per_serving ?? 0) * p.servings,
+            0,
+          ) / 7
+        : 0;
 
     const prompt = `あなたは栄養士兼料理家です。以下の情報をもとに、今週のミールプレップ向けレシピを4〜5件提案してください。
 
@@ -103,7 +142,8 @@ ${pastRecipes.map((r) => r.title).join(", ") || "なし"}
       messages: [{ role: "user", content: prompt }],
     });
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "";
+    const text =
+      response.content[0].type === "text" ? response.content[0].text : "";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("No JSON in response");
 
@@ -135,7 +175,11 @@ ${pastRecipes.map((r) => r.title).join(", ") || "なし"}
       is_tried: false,
     }));
 
-    const { data: savedRecipes, error } = await supabase.schema(DB_SCHEMA).from("recipes").insert(inserts).select();
+    const { data: savedRecipes, error } = await supabase
+      .schema(DB_SCHEMA)
+      .from("recipes")
+      .insert(inserts)
+      .select();
     if (error) throw error;
 
     // Fetch Unsplash images asynchronously and update DB
@@ -144,7 +188,11 @@ ${pastRecipes.map((r) => r.title).join(", ") || "なし"}
       if (!titleEn) return;
       const imageUrl = await fetchUnsplashImage(titleEn);
       if (!imageUrl) return;
-      await supabase.schema(DB_SCHEMA).from("recipes").update({ image_url: imageUrl }).eq("id", recipe.id);
+      await supabase
+        .schema(DB_SCHEMA)
+        .from("recipes")
+        .update({ image_url: imageUrl })
+        .eq("id", recipe.id);
       recipe.image_url = imageUrl;
     });
     await Promise.allSettled(imageUpdates);
@@ -152,6 +200,9 @@ ${pastRecipes.map((r) => r.title).join(", ") || "なし"}
     return NextResponse.json({ recipes: savedRecipes });
   } catch (error) {
     console.error("Recipe suggestion error:", error);
-    return NextResponse.json({ error: "レシピ提案に失敗しました" }, { status: 500 });
+    return NextResponse.json(
+      { error: "レシピ提案に失敗しました" },
+      { status: 500 },
+    );
   }
 }

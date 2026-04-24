@@ -38,7 +38,9 @@ export function useFoodImage(query: string | null): UseFoodImageResult {
           setLoading(false);
         }
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [query]);
 
   return { imageUrl, loading, error };

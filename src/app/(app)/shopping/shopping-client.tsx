@@ -57,42 +57,63 @@ function ItemImage({ item }: { item: ShoppingListItem }) {
   );
 }
 
-export function ShoppingClient({ userId, items: initialItems }: ShoppingClientProps) {
+export function ShoppingClient({
+  userId,
+  items: initialItems,
+}: ShoppingClientProps) {
   const supabase = createClient();
   const [items, setItems] = useState<ShoppingListItem[]>(initialItems);
   const [newItemName, setNewItemName] = useState("");
   const [adding, setAdding] = useState(false);
   const [storeMode, setStoreMode] = useState(false);
-  const [pendingPantryItem, setPendingPantryItem] = useState<ShoppingListItem | null>(null);
+  const [pendingPantryItem, setPendingPantryItem] =
+    useState<ShoppingListItem | null>(null);
 
   const unchecked = items.filter((i) => !i.checked);
   const checked = items.filter((i) => i.checked);
 
   const toggleItem = async (item: ShoppingListItem) => {
-    const { error } = await db.shopping.update(supabase, item.id, { checked: !item.checked });
-    if (error) { toast.error("更新に失敗しました"); return; }
-    setItems(items.map((i) => (i.id === item.id ? { ...i, checked: !i.checked } : i)));
+    const { error } = await db.shopping.update(supabase, item.id, {
+      checked: !item.checked,
+    });
+    if (error) {
+      toast.error("更新に失敗しました");
+      return;
+    }
+    setItems(
+      items.map((i) => (i.id === item.id ? { ...i, checked: !i.checked } : i)),
+    );
     if (!item.checked) setPendingPantryItem(item);
   };
 
   const confirmAddToPantry = async () => {
     if (!pendingPantryItem) return;
     const itemName = pendingPantryItem.name.replace(/\s+\S+$/, "").trim();
-    await db.pantry.upsert(supabase, { user_id: userId, name: itemName, in_stock: true });
+    await db.pantry.upsert(supabase, {
+      user_id: userId,
+      name: itemName,
+      in_stock: true,
+    });
     toast.success(`${itemName}を食材庫に追加しました`);
     setPendingPantryItem(null);
   };
 
   const deleteItem = async (id: string) => {
     const { error } = await db.shopping.delete(supabase, id);
-    if (error) { toast.error("削除に失敗しました"); return; }
+    if (error) {
+      toast.error("削除に失敗しました");
+      return;
+    }
     setItems(items.filter((i) => i.id !== id));
   };
 
   const clearChecked = async () => {
     const ids = checked.map((i) => i.id);
     const { error } = await db.shopping.deleteMany(supabase, ids);
-    if (error) { toast.error("削除に失敗しました"); return; }
+    if (error) {
+      toast.error("削除に失敗しました");
+      return;
+    }
     setItems(unchecked);
     toast.success(`${ids.length}件を削除しました`);
   };
@@ -106,7 +127,10 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
       checked: false,
     });
     setAdding(false);
-    if (error) { toast.error("追加に失敗しました"); return; }
+    if (error) {
+      toast.error("追加に失敗しました");
+      return;
+    }
     setItems([data as ShoppingListItem, ...items]);
     setNewItemName("");
   };
@@ -115,7 +139,10 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
     <div className="flex flex-col">
       <AppHeader />
 
-      <AlertDialog open={!!pendingPantryItem} onOpenChange={(open) => !open && setPendingPantryItem(null)}>
+      <AlertDialog
+        open={!!pendingPantryItem}
+        onOpenChange={(open) => !open && setPendingPantryItem(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>食材庫に追加しますか？</AlertDialogTitle>
@@ -125,7 +152,9 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>スキップ</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAddToPantry}>追加する</AlertDialogAction>
+            <AlertDialogAction onClick={confirmAddToPantry}>
+              追加する
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -143,15 +172,23 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
                   <div className="flex items-center gap-4">
                     <ItemImage item={item} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-2xl font-semibold text-foreground">{item.name}</p>
+                      <p className="text-2xl font-semibold text-foreground">
+                        {item.name}
+                      </p>
                       {item.name_en && (
-                        <p className="text-lg font-medium text-muted-foreground">{item.name_en}</p>
+                        <p className="text-lg font-medium text-muted-foreground">
+                          {item.name_en}
+                        </p>
                       )}
                       {item.name_vi && (
-                        <p className="text-lg font-semibold text-info">{item.name_vi}</p>
+                        <p className="text-lg font-semibold text-info">
+                          {item.name_vi}
+                        </p>
                       )}
                       {item.amount && (
-                        <p className="text-sm text-muted-foreground mt-1">{item.amount}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {item.amount}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -159,7 +196,9 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
               </Card>
             ))}
             {unchecked.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">未購入アイテムがありません</p>
+              <p className="text-center text-muted-foreground py-8">
+                未購入アイテムがありません
+              </p>
             )}
           </div>
         </SheetContent>
@@ -194,8 +233,12 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
           <Input
             placeholder="アイテムを追加..."
             value={newItemName}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewItemName(e.target.value)}
-            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && addItem()}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setNewItemName(e.target.value)
+            }
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
+              e.key === "Enter" && addItem()
+            }
             className="flex-1"
           />
           <Button onClick={addItem} disabled={adding} size="icon">
@@ -229,7 +272,9 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
                         <p className="text-sm font-medium">{item.name}</p>
                         {(item.name_en || item.name_vi) && (
                           <p className="text-xs text-muted-foreground">
-                            {[item.name_en, item.name_vi].filter(Boolean).join(" · ")}
+                            {[item.name_en, item.name_vi]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </p>
                         )}
                       </div>
@@ -274,7 +319,9 @@ export function ShoppingClient({ userId, items: initialItems }: ShoppingClientPr
                         className="flex-shrink-0"
                       />
                       <ItemImage item={item} />
-                      <span className="flex-1 text-sm line-through text-muted-foreground">{item.name}</span>
+                      <span className="flex-1 text-sm line-through text-muted-foreground">
+                        {item.name}
+                      </span>
                       <Button
                         variant="ghost"
                         size="icon"

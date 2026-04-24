@@ -1,15 +1,39 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Plus, Trash2, UtensilsCrossed, CalendarDays, RefreshCw } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Trash2,
+  UtensilsCrossed,
+  CalendarDays,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
-  Button, PageHeader, Card, CardContent, Badge,
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Button,
+  PageHeader,
+  Card,
+  CardContent,
+  Badge,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
-import { Recipe, MealPlanWithRecipe, MealType, MEAL_TYPE_LABELS } from "@/types/database";
+import {
+  Recipe,
+  MealPlanWithRecipe,
+  MealType,
+  MEAL_TYPE_LABELS,
+} from "@/types/database";
 import { useFoodImage } from "@/hooks/use-food-image";
 
 interface PlanClientProps {
@@ -45,21 +69,33 @@ function RecipeImage({ url, title }: { url: string | null; title: string }) {
   if (!src) {
     return (
       <div className="w-full h-20 bg-surface-subtle flex items-center justify-center">
-        <UtensilsCrossed className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+        <UtensilsCrossed
+          className="w-5 h-5 text-muted-foreground"
+          strokeWidth={1.5}
+        />
       </div>
     );
   }
   return <img src={src} alt={title} className="w-full h-20 object-cover" />;
 }
 
-export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClientProps) {
+export function PlanClient({
+  initialPlans,
+  recipes,
+  initialWeekStart,
+}: PlanClientProps) {
   const [weekStart, setWeekStart] = useState(initialWeekStart);
   const [plans, setPlans] = useState<MealPlanWithRecipe[]>(initialPlans);
   const [loading, setLoading] = useState(false);
-  const [selectedCell, setSelectedCell] = useState<{ date: string; mealType: MealType } | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{
+    date: string;
+    mealType: MealType;
+  } | null>(null);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string>("");
   const [servings, setServings] = useState<number>(1);
-  const [repeatRule, setRepeatRule] = useState<"none" | "daily" | "weekdays" | "custom">("none");
+  const [repeatRule, setRepeatRule] = useState<
+    "none" | "daily" | "weekdays" | "custom"
+  >("none");
   const [repeatUntil, setRepeatUntil] = useState<string>("");
   const [customDays, setCustomDays] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
@@ -76,7 +112,7 @@ export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClie
       const end = addDays(start, 6);
       const res = await fetch(`/api/plan/week?start=${start}&end=${end}`);
       if (!res.ok) return;
-      const data = await res.json() as { plans: MealPlanWithRecipe[] };
+      const data = (await res.json()) as { plans: MealPlanWithRecipe[] };
       setPlans(data.plans);
     } catch {
       // silent
@@ -117,7 +153,10 @@ export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClie
           repeat_until: repeatUntil || null,
         }),
       });
-      const data = await res.json() as { plans_created: number; error?: string };
+      const data = (await res.json()) as {
+        plans_created: number;
+        error?: string;
+      };
       if (data.error) throw new Error(data.error);
       toast.success(`${data.plans_created}日分の献立を登録しました`);
       setSelectedCell(null);
@@ -149,17 +188,16 @@ export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClie
     );
   };
 
-  const existingPlan = selectedCell ? planMap.get(`${selectedCell.date}:${selectedCell.mealType}`) : null;
+  const existingPlan = selectedCell
+    ? planMap.get(`${selectedCell.date}:${selectedCell.mealType}`)
+    : null;
 
   return (
     <div className="flex flex-col">
       <AppHeader />
 
       <div className="px-4 md:px-8 pt-5 pb-8 space-y-5 max-w-5xl">
-        <PageHeader
-          title="献立"
-          description="週単位で食事計画を立てます"
-        />
+        <PageHeader title="献立" description="週単位で食事計画を立てます" />
 
         {/* Week navigation */}
         <div className="flex items-center gap-3">
@@ -172,7 +210,9 @@ export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClie
           <Button variant="outline" size="icon" onClick={() => goWeek(1)}>
             <ChevronRight className="w-4 h-4" />
           </Button>
-          {loading && <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />}
+          {loading && (
+            <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />
+          )}
         </div>
 
         {/* Calendar grid */}
@@ -182,8 +222,17 @@ export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClie
               <tr>
                 <th className="w-16 p-2 text-xs text-muted-foreground font-normal text-left" />
                 {weekDays.map((date) => (
-                  <th key={date} className={`p-2 text-xs font-medium text-center ${isToday(date) ? "text-primary" : "text-foreground"}`}>
-                    <span className={isToday(date) ? "bg-primary/10 px-2 py-0.5 rounded-full" : ""}>
+                  <th
+                    key={date}
+                    className={`p-2 text-xs font-medium text-center ${isToday(date) ? "text-primary" : "text-foreground"}`}
+                  >
+                    <span
+                      className={
+                        isToday(date)
+                          ? "bg-primary/10 px-2 py-0.5 rounded-full"
+                          : ""
+                      }
+                    >
                       {formatDate(date)}
                     </span>
                   </th>
@@ -202,17 +251,37 @@ export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClie
                       <td key={date} className="p-1 align-top">
                         {plan ? (
                           <div className="relative group">
-                            <Card className="overflow-hidden cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all" onClick={() => openCell(date, mealType)}>
-                              <RecipeImage url={plan.recipe.image_url} title={plan.recipe.title_en ?? plan.recipe.title} />
+                            <Card
+                              className="overflow-hidden cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all"
+                              onClick={() => openCell(date, mealType)}
+                            >
+                              <RecipeImage
+                                url={plan.recipe.image_url}
+                                title={
+                                  plan.recipe.title_en ?? plan.recipe.title
+                                }
+                              />
                               <CardContent className="p-1.5">
-                                <p className="text-xs font-medium line-clamp-1 leading-tight">{plan.recipe.title}</p>
+                                <p className="text-xs font-medium line-clamp-1 leading-tight">
+                                  {plan.recipe.title}
+                                </p>
                                 {plan.recipe.protein_g_per_serving && (
-                                  <p className="text-xs text-primary font-semibold mt-0.5">P {Math.round(plan.recipe.protein_g_per_serving * plan.servings)}g</p>
+                                  <p className="text-xs text-primary font-semibold mt-0.5">
+                                    P{" "}
+                                    {Math.round(
+                                      plan.recipe.protein_g_per_serving *
+                                        plan.servings,
+                                    )}
+                                    g
+                                  </p>
                                 )}
                               </CardContent>
                             </Card>
                             <button
-                              onClick={(e) => { e.stopPropagation(); deletePlan(plan.id); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deletePlan(plan.id);
+                              }}
                               className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-destructive text-white rounded-full p-0.5 transition-opacity"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -239,14 +308,24 @@ export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClie
         {plans.length > 0 && (
           <div className="flex gap-2 flex-wrap">
             {weekDays.map((date) => {
-              const dayPlans = MEAL_TYPES.map((t) => planMap.get(`${date}:${t}`)).filter(Boolean) as MealPlanWithRecipe[];
-              const totalProtein = dayPlans.reduce((s, p) => s + (p.recipe.protein_g_per_serving ?? 0) * p.servings, 0);
+              const dayPlans = MEAL_TYPES.map((t) =>
+                planMap.get(`${date}:${t}`),
+              ).filter(Boolean) as MealPlanWithRecipe[];
+              const totalProtein = dayPlans.reduce(
+                (s, p) =>
+                  s + (p.recipe.protein_g_per_serving ?? 0) * p.servings,
+                0,
+              );
               if (totalProtein === 0) return null;
               return (
                 <div key={date} className="flex items-center gap-1">
                   <CalendarDays className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">{formatDate(date).split("(")[1].replace(")", "")}:</span>
-                  <Badge variant="secondary" className="text-xs">{Math.round(totalProtein)}g</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDate(date).split("(")[1].replace(")", "")}:
+                  </span>
+                  <Badge variant="secondary" className="text-xs">
+                    {Math.round(totalProtein)}g
+                  </Badge>
                 </div>
               );
             })}
@@ -255,11 +334,15 @@ export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClie
       </div>
 
       {/* Recipe picker dialog */}
-      <Dialog open={!!selectedCell} onOpenChange={(open) => !open && setSelectedCell(null)}>
+      <Dialog
+        open={!!selectedCell}
+        onOpenChange={(open) => !open && setSelectedCell(null)}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>
-              {selectedCell && `${formatDate(selectedCell.date)} ${MEAL_TYPE_LABELS[selectedCell.mealType]}`}
+              {selectedCell &&
+                `${formatDate(selectedCell.date)} ${MEAL_TYPE_LABELS[selectedCell.mealType]}`}
             </DialogTitle>
           </DialogHeader>
 
@@ -276,7 +359,10 @@ export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClie
               </p>
             ) : (
               <>
-                <Select value={selectedRecipeId} onValueChange={setSelectedRecipeId}>
+                <Select
+                  value={selectedRecipeId}
+                  onValueChange={setSelectedRecipeId}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="レシピを選択..." />
                   </SelectTrigger>
@@ -284,7 +370,8 @@ export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClie
                     {recipes.map((r) => (
                       <SelectItem key={r.id} value={r.id}>
                         {r.title}
-                        {r.protein_g_per_serving && ` (P${r.protein_g_per_serving}g)`}
+                        {r.protein_g_per_serving &&
+                          ` (P${r.protein_g_per_serving}g)`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -292,21 +379,31 @@ export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClie
 
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">食分:</span>
-                  <Select value={String(servings)} onValueChange={(v) => setServings(Number(v))}>
+                  <Select
+                    value={String(servings)}
+                    onValueChange={(v) => setServings(Number(v))}
+                  >
                     <SelectTrigger className="w-20">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {[0.5, 1, 1.5, 2, 3].map((s) => (
-                        <SelectItem key={s} value={String(s)}>{s}</SelectItem>
+                        <SelectItem key={s} value={String(s)}>
+                          {s}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <span className="text-sm text-muted-foreground">繰り返し:</span>
-                  <Select value={repeatRule} onValueChange={(v) => setRepeatRule(v as typeof repeatRule)}>
+                  <span className="text-sm text-muted-foreground">
+                    繰り返し:
+                  </span>
+                  <Select
+                    value={repeatRule}
+                    onValueChange={(v) => setRepeatRule(v as typeof repeatRule)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -321,23 +418,29 @@ export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClie
 
                 {repeatRule === "custom" && (
                   <div className="flex gap-1">
-                    {["日", "月", "火", "水", "木", "金", "土"].map((label, i) => (
-                      <button
-                        key={i}
-                        onClick={() => toggleCustomDay(i)}
-                        className={`w-8 h-8 rounded-full text-xs font-medium transition-colors ${
-                          customDays.includes(i) ? "bg-primary text-white" : "bg-surface-subtle text-muted-foreground"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
+                    {["日", "月", "火", "水", "木", "金", "土"].map(
+                      (label, i) => (
+                        <button
+                          key={i}
+                          onClick={() => toggleCustomDay(i)}
+                          className={`w-8 h-8 rounded-full text-xs font-medium transition-colors ${
+                            customDays.includes(i)
+                              ? "bg-primary text-white"
+                              : "bg-surface-subtle text-muted-foreground"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ),
+                    )}
                   </div>
                 )}
 
                 {repeatRule !== "none" && (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">終了日:</span>
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">
+                      終了日:
+                    </span>
                     <input
                       type="date"
                       value={repeatUntil}
@@ -348,7 +451,11 @@ export function PlanClient({ initialPlans, recipes, initialWeekStart }: PlanClie
                 )}
 
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" className="flex-1" onClick={() => setSelectedCell(null)}>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setSelectedCell(null)}
+                  >
                     キャンセル
                   </Button>
                   <Button
