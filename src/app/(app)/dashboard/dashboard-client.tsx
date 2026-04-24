@@ -54,7 +54,7 @@ export function DashboardClient({
 
           {todayPlans.length === 0 ? (
             <Link href="/plan" className="block">
-              <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <Card className="cursor-pointer hover:border border-border transition-shadow">
                 <CardContent className="flex flex-col items-center gap-4 py-10">
                   <div className="rounded-full bg-primary/10 p-4">
                     <CalendarDays className="w-8 h-8 text-primary" />
