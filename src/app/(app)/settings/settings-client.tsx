@@ -52,7 +52,6 @@ export function SettingsClient({
       user_id: userId,
       protein_target_g: parseInt(proteinTarget),
       weight_kg: weightKg ? parseFloat(weightKg) : null,
-      updated_at: new Date().toISOString(),
     });
     setSaving(false);
     if (error) {

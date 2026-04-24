@@ -24,26 +24,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Section,
-  Badge,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { ShoppingListItem } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { db } from "@/lib/db";
 import { useFoodImage } from "@/hooks/use-food-image";
-import type { TranslateResponse } from "@/types/api";
-import { cn } from "@/lib/utils";
 
 interface ShoppingClientProps {
   userId: string;
   items: ShoppingListItem[];
 }
 
-type Translation = { en: string; vi: string };
+function ItemImage({ item }: { item: ShoppingListItem }) {
+  const query = item.name_en ?? item.name;
+  const { imageUrl, error } = useFoodImage(item.image_url ? null : query);
+  const src = item.image_url ?? imageUrl;
 
-function ItemImage({ name }: { name: string }) {
-  const { imageUrl, error } = useFoodImage(name);
-  if (!imageUrl || error) {
+  if (!src || error) {
     return (
       <div className="w-10 h-10 rounded-md bg-surface-subtle flex items-center justify-center flex-shrink-0">
         <ImageOff className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
@@ -52,95 +50,49 @@ function ItemImage({ name }: { name: string }) {
   }
   return (
     <img
-      src={imageUrl}
-      alt={name}
+      src={src}
+      alt={item.name}
       className="w-10 h-10 rounded-md object-cover flex-shrink-0 bg-muted"
     />
   );
 }
 
-export function ShoppingClient({
-  userId,
-  items: initialItems,
-}: ShoppingClientProps) {
+export function ShoppingClient({ userId, items: initialItems }: ShoppingClientProps) {
   const supabase = createClient();
   const [items, setItems] = useState<ShoppingListItem[]>(initialItems);
   const [newItemName, setNewItemName] = useState("");
   const [adding, setAdding] = useState(false);
   const [storeMode, setStoreMode] = useState(false);
-  const [translations, setTranslations] = useState<Record<string, Translation>>(
-    {},
-  );
-  const [translating, setTranslating] = useState(false);
-  const [pendingPantryItem, setPendingPantryItem] =
-    useState<ShoppingListItem | null>(null);
+  const [pendingPantryItem, setPendingPantryItem] = useState<ShoppingListItem | null>(null);
 
   const unchecked = items.filter((i) => !i.checked);
   const checked = items.filter((i) => i.checked);
 
-  const fetchTranslations = async (itemList: ShoppingListItem[]) => {
-    const names = itemList.map((i) => i.name);
-    if (names.length === 0) return;
-    setTranslating(true);
-    try {
-      const res = await fetch("/api/shopping/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ names }),
-      });
-      const data = await res.json();
-      setTranslations(data.translations ?? {});
-    } catch {
-      // silent fail
-    } finally {
-      setTranslating(false);
-    }
-  };
-
   const toggleItem = async (item: ShoppingListItem) => {
-    const { error } = await db.shopping.update(supabase, item.id, {
-      checked: !item.checked,
-    });
-    if (error) {
-      toast.error("更新に失敗しました");
-      return;
-    }
-    setItems(
-      items.map((i) => (i.id === item.id ? { ...i, checked: !i.checked } : i)),
-    );
-    if (!item.checked) {
-      setPendingPantryItem(item);
-    }
+    const { error } = await db.shopping.update(supabase, item.id, { checked: !item.checked });
+    if (error) { toast.error("更新に失敗しました"); return; }
+    setItems(items.map((i) => (i.id === item.id ? { ...i, checked: !i.checked } : i)));
+    if (!item.checked) setPendingPantryItem(item);
   };
 
   const confirmAddToPantry = async () => {
     if (!pendingPantryItem) return;
     const itemName = pendingPantryItem.name.replace(/\s+\S+$/, "").trim();
-    await db.pantry.upsert(supabase, {
-      user_id: userId,
-      name: itemName,
-      in_stock: true,
-    });
+    await db.pantry.upsert(supabase, { user_id: userId, name: itemName, in_stock: true });
     toast.success(`${itemName}を食材庫に追加しました`);
     setPendingPantryItem(null);
   };
 
   const deleteItem = async (id: string) => {
     const { error } = await db.shopping.delete(supabase, id);
-    if (error) {
-      toast.error("削除に失敗しました");
-      return;
-    }
+    if (error) { toast.error("削除に失敗しました"); return; }
     setItems(items.filter((i) => i.id !== id));
   };
 
   const clearChecked = async () => {
     const ids = checked.map((i) => i.id);
     const { error } = await db.shopping.deleteMany(supabase, ids);
-    if (error) {
-      toast.error("削除に失敗しました");
-      return;
-    }
+    if (error) { toast.error("削除に失敗しました"); return; }
     setItems(unchecked);
     toast.success(`${ids.length}件を削除しました`);
   };
@@ -154,10 +106,7 @@ export function ShoppingClient({
       checked: false,
     });
     setAdding(false);
-    if (error) {
-      toast.error("追加に失敗しました");
-      return;
-    }
+    if (error) { toast.error("追加に失敗しました"); return; }
     setItems([data as ShoppingListItem, ...items]);
     setNewItemName("");
   };
@@ -166,11 +115,7 @@ export function ShoppingClient({
     <div className="flex flex-col">
       <AppHeader />
 
-      {/* Pantry add confirm dialog */}
-      <AlertDialog
-        open={!!pendingPantryItem}
-        onOpenChange={(open) => !open && setPendingPantryItem(null)}
-      >
+      <AlertDialog open={!!pendingPantryItem} onOpenChange={(open) => !open && setPendingPantryItem(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>食材庫に追加しますか？</AlertDialogTitle>
@@ -180,56 +125,41 @@ export function ShoppingClient({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>スキップ</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAddToPantry}>
-              追加する
-            </AlertDialogAction>
+            <AlertDialogAction onClick={confirmAddToPantry}>追加する</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Store mode sheet */}
+      {/* 店員に見せるモード */}
       <Sheet open={storeMode} onOpenChange={setStoreMode}>
         <SheetContent side="bottom" className="h-[90vh] flex flex-col">
           <SheetHeader>
-            <SheetTitle>🛒 店員に見せる / Show to staff</SheetTitle>
+            <SheetTitle>店員に見せる / Show to staff</SheetTitle>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto space-y-3 pt-4">
-            {translating && (
-              <p className="text-center py-4 text-sm text-muted-foreground">
-                翻訳中...
-              </p>
-            )}
-            {unchecked.map((item) => {
-              const t = translations[item.name];
-              return (
-                <Card key={item.id}>
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex items-center gap-4">
-                      <ItemImage name={item.name} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-2xl font-semibold text-foreground">
-                          {item.name}
-                        </p>
-                        {t?.en && (
-                          <p className="text-lg font-medium text-muted-foreground">
-                            {t.en}
-                          </p>
-                        )}
-                        {t?.vi && (
-                          <p className="text-lg font-semibold text-info">
-                            {t.vi}
-                          </p>
-                        )}
-                      </div>
+            {unchecked.map((item) => (
+              <Card key={item.id}>
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-4">
+                    <ItemImage item={item} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-2xl font-semibold text-foreground">{item.name}</p>
+                      {item.name_en && (
+                        <p className="text-lg font-medium text-muted-foreground">{item.name_en}</p>
+                      )}
+                      {item.name_vi && (
+                        <p className="text-lg font-semibold text-info">{item.name_vi}</p>
+                      )}
+                      {item.amount && (
+                        <p className="text-sm text-muted-foreground mt-1">{item.amount}</p>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
             {unchecked.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">
-                未購入アイテムがありません
-              </p>
+              <p className="text-center text-muted-foreground py-8">未購入アイテムがありません</p>
             )}
           </div>
         </SheetContent>
@@ -250,10 +180,7 @@ export function ShoppingClient({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  setStoreMode(true);
-                  fetchTranslations(unchecked);
-                }}
+                onClick={() => setStoreMode(true)}
                 className="gap-1.5"
               >
                 <Globe className="w-3.5 h-3.5" />
@@ -263,17 +190,12 @@ export function ShoppingClient({
           }
         />
 
-        {/* Add item */}
         <div className="flex gap-2">
           <Input
             placeholder="アイテムを追加..."
             value={newItemName}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setNewItemName(e.target.value)
-            }
-            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
-              e.key === "Enter" && addItem()
-            }
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewItemName(e.target.value)}
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && addItem()}
             className="flex-1"
           />
           <Button onClick={addItem} disabled={adding} size="icon">
@@ -290,7 +212,7 @@ export function ShoppingClient({
         ) : (
           <div className="space-y-6 pb-4">
             {unchecked.length > 0 && (
-              <Section title={`未購入`} description={`${unchecked.length}品`}>
+              <Section title="未購入" description={`${unchecked.length}品`}>
                 <div className="space-y-1.5">
                   {unchecked.map((item) => (
                     <div
@@ -302,13 +224,12 @@ export function ShoppingClient({
                         onCheckedChange={() => toggleItem(item)}
                         className="flex-shrink-0"
                       />
-                      <ItemImage name={item.name} />
+                      <ItemImage item={item} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium">{item.name}</p>
-                        {translations[item.name] && (
+                        {(item.name_en || item.name_vi) && (
                           <p className="text-xs text-muted-foreground">
-                            {translations[item.name].en} ·{" "}
-                            {translations[item.name].vi}
+                            {[item.name_en, item.name_vi].filter(Boolean).join(" · ")}
                           </p>
                         )}
                       </div>
@@ -352,10 +273,8 @@ export function ShoppingClient({
                         onCheckedChange={() => toggleItem(item)}
                         className="flex-shrink-0"
                       />
-                      <ItemImage name={item.name} />
-                      <span className="flex-1 text-sm line-through text-muted-foreground">
-                        {item.name}
-                      </span>
+                      <ItemImage item={item} />
+                      <span className="flex-1 text-sm line-through text-muted-foreground">{item.name}</span>
                       <Button
                         variant="ghost"
                         size="icon"

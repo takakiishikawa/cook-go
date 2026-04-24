@@ -8,13 +8,13 @@ interface UseFoodImageResult {
   error: boolean;
 }
 
-export function useFoodImage(name: string | null): UseFoodImageResult {
+export function useFoodImage(query: string | null): UseFoodImageResult {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(!!name);
+  const [loading, setLoading] = useState(!!query);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!name) {
+    if (!query) {
       setImageUrl(null);
       setLoading(false);
       setError(false);
@@ -24,7 +24,7 @@ export function useFoodImage(name: string | null): UseFoodImageResult {
     setLoading(true);
     setError(false);
     setImageUrl(null);
-    fetch(`/api/pantry/image?name=${encodeURIComponent(name)}`)
+    fetch(`/api/image?query=${encodeURIComponent(query)}`)
       .then((r) => r.json())
       .then((d: { imageUrl: string | null }) => {
         if (!cancelled) {
@@ -38,10 +38,8 @@ export function useFoodImage(name: string | null): UseFoodImageResult {
           setLoading(false);
         }
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [name]);
+    return () => { cancelled = true; };
+  }, [query]);
 
   return { imageUrl, loading, error };
 }

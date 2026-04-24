@@ -3,28 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ShoppingCart,
-  Clock,
-  Check,
-  X,
-  Play,
-  UtensilsCrossed,
-  Users,
-  Flame,
-  Beef,
+  ShoppingCart, Clock, Check, X, Play, UtensilsCrossed, Users, Flame, Beef,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/layout/app-header";
 import {
-  Button,
-  Badge,
-  Skeleton,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Section,
-  PageHeader,
+  Button, Badge, Skeleton, Card, CardContent, Section, PageHeader,
 } from "@takaki/go-design-system";
 import { Recipe, RecipeIngredient, RecipeStep } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -35,45 +19,44 @@ interface RecipeDetailClientProps {
   pantryItems: Array<{ name: string; in_stock: boolean }>;
 }
 
-function RecipeHeroImage({ title }: { title: string }) {
-  const query = title.split(/[のとでや]/)[0].trim() || title;
-  const { imageUrl, loading } = useFoodImage(query);
+function RecipeHeroImage({ recipe }: { recipe: Recipe }) {
+  const query = recipe.title_en ?? recipe.title;
+  const { imageUrl, loading } = useFoodImage(recipe.image_url ? null : query);
+  const src = recipe.image_url ?? imageUrl;
 
   if (loading) return <Skeleton className="w-full h-56" />;
-  if (!imageUrl) {
+  if (!src) {
     return (
       <div className="w-full h-56 bg-surface-subtle flex items-center justify-center">
-        <UtensilsCrossed
-          className="w-12 h-12 text-muted-foreground"
-          strokeWidth={1.5}
-        />
+        <UtensilsCrossed className="w-12 h-12 text-muted-foreground" strokeWidth={1.5} />
       </div>
     );
   }
+  return <img src={src} alt={recipe.title} className="w-full h-56 object-cover" />;
+}
+
+function StepImage({ query }: { query: string | null }) {
+  const { imageUrl } = useFoodImage(query);
+  if (!imageUrl) return null;
   return (
-    <img src={imageUrl} alt={title} className="w-full h-56 object-cover" />
+    <img
+      src={imageUrl}
+      alt={query ?? ""}
+      className="w-16 h-16 rounded-md object-cover flex-shrink-0"
+    />
   );
 }
 
-export function RecipeDetailClient({
-  recipe,
-  pantryItems,
-}: RecipeDetailClientProps) {
+export function RecipeDetailClient({ recipe, pantryItems }: RecipeDetailClientProps) {
   const router = useRouter();
   const [generating, setGenerating] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
-  const pantryNames = new Set(
-    pantryItems.filter((p) => p.in_stock).map((p) => p.name.toLowerCase()),
-  );
+  const pantryNames = new Set(pantryItems.filter((p) => p.in_stock).map((p) => p.name.toLowerCase()));
   const ingredients = (recipe.ingredients as RecipeIngredient[]) ?? [];
-  const steps = [...((recipe.steps as RecipeStep[]) ?? [])].sort(
-    (a, b) => a.order - b.order,
-  );
+  const steps = [...((recipe.steps as RecipeStep[]) ?? [])].sort((a, b) => a.order - b.order);
 
-  const inPantryCount = ingredients.filter((i) =>
-    pantryNames.has(i.name.toLowerCase()),
-  ).length;
+  const inPantryCount = ingredients.filter((i) => pantryNames.has(i.name.toLowerCase())).length;
   const needToBuyCount = ingredients.length - inPantryCount;
   const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(recipe.title + " 作り方")}`;
 
@@ -109,23 +92,16 @@ export function RecipeDetailClient({
     });
   };
 
-  const completedCount = completedSteps.size;
-  const totalSteps = steps.length;
-
   return (
     <div className="flex flex-col">
       <AppHeader backHref="/recipes" />
 
-      {/* Hero image - full bleed */}
       <div className="overflow-hidden">
-        <RecipeHeroImage title={recipe.title} />
+        <RecipeHeroImage recipe={recipe} />
       </div>
 
       <div className="px-4 md:px-8 pt-5 pb-8 space-y-6 max-w-3xl">
-        <PageHeader
-          title={recipe.title}
-          description={recipe.description ?? undefined}
-        />
+        <PageHeader title={recipe.title} description={recipe.description ?? undefined} />
 
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -134,9 +110,7 @@ export function RecipeDetailClient({
               <Beef className="w-4 h-4 text-primary flex-shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">タンパク質</p>
-                <p className="text-sm font-semibold text-primary">
-                  {recipe.protein_g_per_serving}g
-                </p>
+                <p className="text-sm font-semibold text-primary">{recipe.protein_g_per_serving}g</p>
               </div>
             </div>
           )}
@@ -145,9 +119,7 @@ export function RecipeDetailClient({
               <Flame className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">カロリー</p>
-                <p className="text-sm font-semibold text-foreground">
-                  {recipe.calorie_kcal_per_serving}kcal
-                </p>
+                <p className="text-sm font-semibold text-foreground">{recipe.calorie_kcal_per_serving}kcal</p>
               </div>
             </div>
           )}
@@ -156,9 +128,7 @@ export function RecipeDetailClient({
               <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">調理時間</p>
-                <p className="text-sm font-semibold text-foreground">
-                  {recipe.prep_time_min}分
-                </p>
+                <p className="text-sm font-semibold text-foreground">{recipe.prep_time_min}分</p>
               </div>
             </div>
           )}
@@ -167,19 +137,14 @@ export function RecipeDetailClient({
               <Users className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">食分</p>
-                <p className="text-sm font-semibold text-foreground">
-                  {recipe.servings}食分
-                </p>
+                <p className="text-sm font-semibold text-foreground">{recipe.servings}食分</p>
               </div>
             </div>
           )}
         </div>
 
         {recipe.is_meal_prep_friendly && (
-          <Badge
-            variant="outline"
-            className="bg-warning-subtle text-warning border-transparent"
-          >
+          <Badge variant="outline" className="bg-warning-subtle text-warning border-transparent">
             作り置き向き
           </Badge>
         )}
@@ -198,21 +163,26 @@ export function RecipeDetailClient({
                     <div
                       key={i}
                       className={cn(
-                        "flex items-center justify-between px-3 py-2.5 rounded-md border",
-                        inPantry
-                          ? "bg-primary/5 border-primary/20"
-                          : "bg-muted border-border",
+                        "flex items-start justify-between px-3 py-2.5 rounded-md border",
+                        inPantry ? "bg-primary/5 border-primary/20" : "bg-muted border-border",
                       )}
                     >
                       <div className="flex items-center gap-1.5 min-w-0">
                         {inPantry ? (
-                          <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          <Check className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
                         ) : (
-                          <X className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                          <X className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
                         )}
-                        <span className="text-sm truncate">{ing.name}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm truncate">{ing.name}</p>
+                          {(ing.name_en || ing.name_vi) && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {[ing.name_en, ing.name_vi].filter(Boolean).join(" / ")}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <span className="text-xs text-muted-foreground flex-shrink-0 ml-1">
+                      <span className="text-xs text-muted-foreground flex-shrink-0 ml-1 mt-0.5">
                         {ing.amount}
                       </span>
                     </div>
@@ -220,15 +190,9 @@ export function RecipeDetailClient({
                 })}
               </div>
               {needToBuyCount > 0 && (
-                <Button
-                  onClick={generateShoppingList}
-                  disabled={generating}
-                  className="w-full gap-2"
-                >
+                <Button onClick={generateShoppingList} disabled={generating} className="w-full gap-2">
                   <ShoppingCart className="w-4 h-4" />
-                  {generating
-                    ? "生成中..."
-                    : `買い物リストを作る（${needToBuyCount}品）`}
+                  {generating ? "生成中..." : `買い物リストを作る（${needToBuyCount}品）`}
                 </Button>
               )}
             </div>
@@ -241,11 +205,7 @@ export function RecipeDetailClient({
         {steps.length > 0 && (
           <Section
             title="作り方"
-            description={
-              totalSteps > 0
-                ? `${completedCount} / ${totalSteps} ステップ完了`
-                : undefined
-            }
+            description={`${completedSteps.size} / ${steps.length} ステップ完了`}
             actions={
               <a
                 href={youtubeSearchUrl}
@@ -267,29 +227,23 @@ export function RecipeDetailClient({
                     onClick={() => toggleStep(step.order)}
                     className={cn(
                       "w-full text-left flex gap-4 p-4 rounded-md border transition-colors",
-                      done
-                        ? "bg-primary/5 border-primary/20"
-                        : "bg-card border-border hover:bg-muted",
+                      done ? "bg-primary/5 border-primary/20" : "bg-card border-border hover:bg-muted",
                     )}
                   >
                     <div
                       className={cn(
                         "w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-semibold",
-                        done
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-surface-subtle text-muted-foreground",
+                        done ? "bg-primary text-primary-foreground" : "bg-surface-subtle text-muted-foreground",
                       )}
                     >
                       {done ? <Check className="w-3.5 h-3.5" /> : step.order}
                     </div>
-                    <p
-                      className={cn(
-                        "text-sm leading-relaxed flex-1 text-left pt-0.5",
-                        done && "line-through text-muted-foreground",
-                      )}
-                    >
+                    <p className={cn("text-sm leading-relaxed flex-1 text-left pt-0.5", done && "line-through text-muted-foreground")}>
                       {step.text}
                     </p>
+                    {step.image_query && !done && (
+                      <StepImage query={step.image_query} />
+                    )}
                   </button>
                 );
               })}

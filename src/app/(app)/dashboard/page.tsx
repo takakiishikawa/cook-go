@@ -5,28 +5,26 @@ import { DashboardClient } from "./dashboard-client";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
   const today = new Date();
   const todayStr = today.toISOString().split("T")[0];
   const sevenDaysAgo = new Date(today);
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString().split("T")[0];
 
-  const [settings, todayMeals, weekMeals] = await Promise.all([
+  const [settings, todayPlans, weeklyProtein] = await Promise.all([
     db.settings.get(supabase, user.id),
-    db.meals.getToday(supabase, user.id, todayStr),
-    db.meals.getWeek(supabase, user.id, sevenDaysAgo.toISOString()),
+    db.plans.getToday(supabase, user.id, todayStr),
+    db.plans.getWeeklyProtein(supabase, user.id, sevenDaysAgoStr, todayStr),
   ]);
 
   return (
     <DashboardClient
-      user={user}
       settings={settings ?? { protein_target_g: 108, weight_kg: null }}
-      todayMeals={todayMeals}
-      weekMeals={weekMeals}
+      todayPlans={todayPlans}
+      weeklyProtein={weeklyProtein}
     />
   );
 }

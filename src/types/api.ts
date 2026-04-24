@@ -1,37 +1,28 @@
-// Meal analysis
-export interface MealAnalysisRequest {
-  image_base64: string;
-  media_type?: string;
-  meal_type?: string;
-  recipe_url?: string;
-}
-
-export interface MealAnalysisResponse {
-  description: string;
-  protein_g: number;
-  calorie_kcal: number;
-  meal_type: string;
-}
-
 // Recipe suggestion
 export interface SuggestedIngredient {
   name: string;
+  name_en: string | null;
+  name_vi: string | null;
   amount: string;
   in_pantry?: boolean;
+  category: string | null;
 }
 
 export interface SuggestedStep {
   order: number;
   text: string;
+  image_query: string | null;
 }
 
 export interface SuggestedRecipe {
   title: string;
+  title_en: string;
   description: string | null;
   protein_g_per_serving: number;
   calorie_kcal_per_serving: number | null;
   prep_time_min: number | null;
   is_meal_prep_friendly: boolean;
+  meal_prep_days: number;
   servings: number;
   ingredients: SuggestedIngredient[];
   steps: SuggestedStep[];
@@ -39,6 +30,27 @@ export interface SuggestedRecipe {
 
 export interface RecipeSuggestClaudeResponse {
   recipes: SuggestedRecipe[];
+}
+
+// Plan mapping
+export interface PlanMapRequest {
+  recipe_id: string;
+  planned_date: string;
+  meal_type: "breakfast" | "lunch" | "dinner";
+  servings: number;
+  repeat_rule: "none" | "daily" | "weekdays" | "custom";
+  repeat_days: number[];
+  repeat_until: string | null;
+}
+
+export interface PlanMapResponse {
+  plans_created: number;
+  total_protein_g: number;
+}
+
+// Image
+export interface ImageResponse {
+  imageUrl: string | null;
 }
 
 // Translation
@@ -55,7 +67,7 @@ export interface TranslateResponse {
   translations: Record<string, TranslationEntry>;
 }
 
-// Food image / pantry suggest
+// Food image / pantry suggest (legacy compat)
 export interface FoodImageResponse {
   imageUrl: string | null;
 }

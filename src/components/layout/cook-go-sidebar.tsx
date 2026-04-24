@@ -9,7 +9,7 @@ import {
   ShoppingCart,
   Archive,
   Settings,
-  PlusCircle,
+  CalendarDays,
   LogOut,
   Leaf,
   ChevronsUpDown,
@@ -69,7 +69,7 @@ const GO_APPS = [
 
 const navItems = [
   { href: "/dashboard", icon: Home, label: "ダッシュボード" },
-  { href: "/log", icon: PlusCircle, label: "記録" },
+  { href: "/plan", icon: CalendarDays, label: "献立" },
   { href: "/recipes", icon: BookOpen, label: "レシピ" },
   { href: "/shopping", icon: ShoppingCart, label: "買い物リスト" },
   { href: "/pantry", icon: Archive, label: "食材庫" },

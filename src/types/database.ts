@@ -4,51 +4,28 @@ export interface UserSettings {
   protein_target_g: number;
   weight_kg: number | null;
   created_at: string;
-  updated_at: string;
-}
-
-export interface MealLog {
-  id: string;
-  user_id: string;
-  logged_at: string;
-  meal_type: "breakfast" | "lunch" | "dinner" | "snack" | null;
-  photo_url: string | null;
-  description: string | null;
-  protein_g: number;
-  calorie_kcal: number | null;
-  is_repeat: boolean;
-  source_meal_id: string | null;
-  created_at: string;
-}
-
-export interface RecurringMeal {
-  id: string;
-  user_id: string;
-  name: string;
-  meal_type: "breakfast" | "lunch" | "dinner" | "snack" | null;
-  protein_g: number;
-  calorie_kcal: number | null;
-  photo_url: string | null;
-  servings: number;
-  active_until: string | null;
-  created_at: string;
 }
 
 export interface RecipeIngredient {
   name: string;
+  name_en: string | null;
+  name_vi: string | null;
   amount: string;
-  in_pantry?: boolean;
+  in_pantry: boolean;
+  category: string | null;
 }
 
 export interface RecipeStep {
   order: number;
   text: string;
+  image_query: string | null;
 }
 
 export interface Recipe {
   id: string;
   user_id: string;
   title: string;
+  title_en: string | null;
   description: string | null;
   protein_g_per_serving: number | null;
   calorie_kcal_per_serving: number | null;
@@ -56,38 +33,62 @@ export interface Recipe {
   prep_time_min: number | null;
   is_meal_prep_friendly: boolean;
   is_tried: boolean;
+  meal_prep_days: number | null;
+  image_url: string | null;
   ingredients: RecipeIngredient[] | null;
   steps: RecipeStep[] | null;
   ai_generated: boolean;
   created_at: string;
 }
 
+export interface MealPlan {
+  id: string;
+  user_id: string;
+  recipe_id: string;
+  planned_date: string;
+  meal_type: "breakfast" | "lunch" | "dinner";
+  servings: number;
+  repeat_rule: "none" | "daily" | "weekdays" | "custom";
+  repeat_days: number[] | null;
+  repeat_until: string | null;
+  created_at: string;
+}
+
+export interface MealPlanWithRecipe extends MealPlan {
+  recipe: Pick<Recipe, "id" | "title" | "title_en" | "image_url" | "protein_g_per_serving" | "calorie_kcal_per_serving">;
+}
+
 export interface PantryItem {
   id: string;
   user_id: string;
   name: string;
+  name_en: string | null;
+  name_vi: string | null;
+  image_url: string | null;
   category: string | null;
   in_stock: boolean;
-  image_url: string | null;
-  updated_at: string;
+  created_at: string;
 }
 
 export interface ShoppingListItem {
   id: string;
   user_id: string;
-  recipe_id: string | null;
   name: string;
+  name_en: string | null;
+  name_vi: string | null;
+  image_url: string | null;
+  amount: string | null;
   checked: boolean;
+  added_to_pantry: boolean;
   created_at: string;
 }
 
-export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+export type MealType = "breakfast" | "lunch" | "dinner";
 
 export const MEAL_TYPE_LABELS: Record<MealType, string> = {
   breakfast: "朝食",
   lunch: "昼食",
   dinner: "夕食",
-  snack: "間食",
 };
 
 export const PANTRY_CATEGORIES = [
