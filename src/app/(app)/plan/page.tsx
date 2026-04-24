@@ -19,7 +19,9 @@ function getWeekRange(offset = 0): { startDate: string; endDate: string } {
 
 export default async function PlanPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
   const { startDate, endDate } = getWeekRange(0);

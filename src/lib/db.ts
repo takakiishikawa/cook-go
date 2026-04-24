@@ -1,8 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DB_SCHEMA } from "./constants";
 import type {
-  Recipe, PantryItem, ShoppingListItem,
-  UserSettings, MealPlan, MealPlanWithRecipe,
+  Recipe,
+  PantryItem,
+  ShoppingListItem,
+  UserSettings,
+  MealPlan,
+  MealPlanWithRecipe,
 } from "@/types/database";
 
 function s(supabase: SupabaseClient) {
@@ -11,12 +15,24 @@ function s(supabase: SupabaseClient) {
 
 export const db = {
   settings: {
-    get: async (supabase: SupabaseClient, userId: string): Promise<UserSettings | null> => {
-      const { data } = await s(supabase).from("user_settings").select("*").eq("user_id", userId).single();
+    get: async (
+      supabase: SupabaseClient,
+      userId: string,
+    ): Promise<UserSettings | null> => {
+      const { data } = await s(supabase)
+        .from("user_settings")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
       return data as UserSettings | null;
     },
-    upsert: async (supabase: SupabaseClient, values: Partial<UserSettings> & { user_id: string }) => {
-      return s(supabase).from("user_settings").upsert(values, { onConflict: "user_id" });
+    upsert: async (
+      supabase: SupabaseClient,
+      values: Partial<UserSettings> & { user_id: string },
+    ) => {
+      return s(supabase)
+        .from("user_settings")
+        .upsert(values, { onConflict: "user_id" });
     },
   },
 
@@ -29,7 +45,9 @@ export const db = {
     ): Promise<MealPlanWithRecipe[]> => {
       const { data } = await s(supabase)
         .from("meal_plans")
-        .select("*, recipe:recipes(id, title, title_en, image_url, protein_g_per_serving, calorie_kcal_per_serving)")
+        .select(
+          "*, recipe:recipes(id, title, title_en, image_url, protein_g_per_serving, calorie_kcal_per_serving)",
+        )
         .eq("user_id", userId)
         .gte("planned_date", startDate)
         .lte("planned_date", endDate)
@@ -38,10 +56,16 @@ export const db = {
       return (data ?? []) as unknown as MealPlanWithRecipe[];
     },
 
-    getToday: async (supabase: SupabaseClient, userId: string, date: string): Promise<MealPlanWithRecipe[]> => {
+    getToday: async (
+      supabase: SupabaseClient,
+      userId: string,
+      date: string,
+    ): Promise<MealPlanWithRecipe[]> => {
       const { data } = await s(supabase)
         .from("meal_plans")
-        .select("*, recipe:recipes(id, title, title_en, image_url, protein_g_per_serving, calorie_kcal_per_serving)")
+        .select(
+          "*, recipe:recipes(id, title, title_en, image_url, protein_g_per_serving, calorie_kcal_per_serving)",
+        )
         .eq("user_id", userId)
         .eq("planned_date", date)
         .order("meal_type");
@@ -64,14 +88,24 @@ export const db = {
       if (!data) return [];
 
       const byDate: Record<string, number> = {};
-      for (const row of data as unknown as Array<{ planned_date: string; servings: number; recipe: { protein_g_per_serving: number | null } }>) {
+      for (const row of data as unknown as Array<{
+        planned_date: string;
+        servings: number;
+        recipe: { protein_g_per_serving: number | null };
+      }>) {
         const p = (row.recipe?.protein_g_per_serving ?? 0) * row.servings;
         byDate[row.planned_date] = (byDate[row.planned_date] ?? 0) + p;
       }
-      return Object.entries(byDate).map(([planned_date, protein_g]) => ({ planned_date, protein_g: Math.round(protein_g) }));
+      return Object.entries(byDate).map(([planned_date, protein_g]) => ({
+        planned_date,
+        protein_g: Math.round(protein_g),
+      }));
     },
 
-    upsert: async (supabase: SupabaseClient, values: Array<Omit<MealPlan, "id" | "created_at">>) => {
+    upsert: async (
+      supabase: SupabaseClient,
+      values: Array<Omit<MealPlan, "id" | "created_at">>,
+    ) => {
       return s(supabase)
         .from("meal_plans")
         .upsert(values, { onConflict: "user_id,planned_date,meal_type" })
@@ -84,57 +118,133 @@ export const db = {
   },
 
   recipes: {
-    getAll: async (supabase: SupabaseClient, userId: string, limit?: number): Promise<Recipe[]> => {
-      let q = s(supabase).from("recipes").select("*").eq("user_id", userId).order("created_at", { ascending: false });
+    getAll: async (
+      supabase: SupabaseClient,
+      userId: string,
+      limit?: number,
+    ): Promise<Recipe[]> => {
+      let q = s(supabase)
+        .from("recipes")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
       if (limit) q = q.limit(limit);
       const { data } = await q;
       return (data ?? []) as Recipe[];
     },
-    getById: async (supabase: SupabaseClient, userId: string, id: string): Promise<Recipe | null> => {
-      const { data } = await s(supabase).from("recipes").select("*").eq("id", id).eq("user_id", userId).single();
+    getById: async (
+      supabase: SupabaseClient,
+      userId: string,
+      id: string,
+    ): Promise<Recipe | null> => {
+      const { data } = await s(supabase)
+        .from("recipes")
+        .select("*")
+        .eq("id", id)
+        .eq("user_id", userId)
+        .single();
       return data as Recipe | null;
     },
-    update: async (supabase: SupabaseClient, id: string, values: Partial<Recipe>) => {
-      return s(supabase).from("recipes").update(values).eq("id", id).select().single();
+    update: async (
+      supabase: SupabaseClient,
+      id: string,
+      values: Partial<Recipe>,
+    ) => {
+      return s(supabase)
+        .from("recipes")
+        .update(values)
+        .eq("id", id)
+        .select()
+        .single();
     },
   },
 
   pantry: {
-    getAll: async (supabase: SupabaseClient, userId: string): Promise<PantryItem[]> => {
-      const { data } = await s(supabase).from("pantry_items").select("*").eq("user_id", userId).order("category").order("name");
+    getAll: async (
+      supabase: SupabaseClient,
+      userId: string,
+    ): Promise<PantryItem[]> => {
+      const { data } = await s(supabase)
+        .from("pantry_items")
+        .select("*")
+        .eq("user_id", userId)
+        .order("category")
+        .order("name");
       return (data ?? []) as PantryItem[];
     },
-    count: async (supabase: SupabaseClient, userId: string): Promise<number> => {
-      const { count } = await s(supabase).from("pantry_items").select("name", { count: "exact", head: true }).eq("user_id", userId);
+    count: async (
+      supabase: SupabaseClient,
+      userId: string,
+    ): Promise<number> => {
+      const { count } = await s(supabase)
+        .from("pantry_items")
+        .select("name", { count: "exact", head: true })
+        .eq("user_id", userId);
       return count ?? 0;
     },
-    insert: async (supabase: SupabaseClient, values: Partial<PantryItem> & { user_id: string }) => {
+    insert: async (
+      supabase: SupabaseClient,
+      values: Partial<PantryItem> & { user_id: string },
+    ) => {
       return s(supabase).from("pantry_items").insert(values).select().single();
     },
-    insertMany: async (supabase: SupabaseClient, values: Array<Partial<PantryItem> & { user_id: string }>) => {
+    insertMany: async (
+      supabase: SupabaseClient,
+      values: Array<Partial<PantryItem> & { user_id: string }>,
+    ) => {
       return s(supabase).from("pantry_items").insert(values);
     },
-    update: async (supabase: SupabaseClient, id: string, values: Partial<PantryItem>) => {
+    update: async (
+      supabase: SupabaseClient,
+      id: string,
+      values: Partial<PantryItem>,
+    ) => {
       return s(supabase).from("pantry_items").update(values).eq("id", id);
     },
     delete: async (supabase: SupabaseClient, id: string) => {
       return s(supabase).from("pantry_items").delete().eq("id", id);
     },
-    upsert: async (supabase: SupabaseClient, values: Partial<PantryItem> & { user_id: string; name: string }) => {
-      return s(supabase).from("pantry_items").upsert(values, { onConflict: "user_id,name" });
+    upsert: async (
+      supabase: SupabaseClient,
+      values: Partial<PantryItem> & { user_id: string; name: string },
+    ) => {
+      return s(supabase)
+        .from("pantry_items")
+        .upsert(values, { onConflict: "user_id,name" });
     },
   },
 
   shopping: {
-    getAll: async (supabase: SupabaseClient, userId: string): Promise<ShoppingListItem[]> => {
-      const { data } = await s(supabase).from("shopping_list_items").select("*").eq("user_id", userId).order("created_at", { ascending: false });
+    getAll: async (
+      supabase: SupabaseClient,
+      userId: string,
+    ): Promise<ShoppingListItem[]> => {
+      const { data } = await s(supabase)
+        .from("shopping_list_items")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
       return (data ?? []) as ShoppingListItem[];
     },
-    insert: async (supabase: SupabaseClient, values: Partial<ShoppingListItem> & { user_id: string }) => {
-      return s(supabase).from("shopping_list_items").insert(values).select().single();
+    insert: async (
+      supabase: SupabaseClient,
+      values: Partial<ShoppingListItem> & { user_id: string },
+    ) => {
+      return s(supabase)
+        .from("shopping_list_items")
+        .insert(values)
+        .select()
+        .single();
     },
-    update: async (supabase: SupabaseClient, id: string, values: Partial<ShoppingListItem>) => {
-      return s(supabase).from("shopping_list_items").update(values).eq("id", id);
+    update: async (
+      supabase: SupabaseClient,
+      id: string,
+      values: Partial<ShoppingListItem>,
+    ) => {
+      return s(supabase)
+        .from("shopping_list_items")
+        .update(values)
+        .eq("id", id);
     },
     delete: async (supabase: SupabaseClient, id: string) => {
       return s(supabase).from("shopping_list_items").delete().eq("id", id);
