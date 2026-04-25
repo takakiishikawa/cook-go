@@ -79,6 +79,13 @@ export async function POST(request: Request) {
       repeat_until,
     );
 
+    if (dates.length === 0) {
+      return NextResponse.json(
+        { error: "登録対象の日付がありません（曜日や終了日を確認してください）" },
+        { status: 400 },
+      );
+    }
+
     const inserts = dates.map((date) => ({
       user_id: user.id,
       recipe_id,
@@ -107,8 +114,14 @@ export async function POST(request: Request) {
     } satisfies PlanMapResponse);
   } catch (error) {
     console.error("Plan map error:", error);
+    const detail =
+      error instanceof Error
+        ? error.message
+        : typeof error === "object" && error !== null
+          ? JSON.stringify(error)
+          : String(error);
     return NextResponse.json(
-      { error: "献立の登録に失敗しました" },
+      { error: `献立の登録に失敗しました: ${detail}` },
       { status: 500 },
     );
   }

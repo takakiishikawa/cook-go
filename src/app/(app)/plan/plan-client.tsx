@@ -161,8 +161,9 @@ export function PlanClient({
       toast.success(`${data.plans_created}日分の献立を登録しました`);
       setSelectedCell(null);
       await fetchWeek(weekStart);
-    } catch {
-      toast.error("献立の登録に失敗しました");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "献立の登録に失敗しました";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
