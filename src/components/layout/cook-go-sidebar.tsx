@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Home,
@@ -10,7 +10,6 @@ import {
   Archive,
   Settings,
   CalendarDays,
-  LogOut,
   Leaf,
   ChevronsUpDown,
   Check,
@@ -35,6 +34,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  UserMenu,
 } from "@takaki/go-design-system";
 import { createClient } from "@/lib/supabase/client";
 
@@ -75,11 +75,6 @@ const navItems = [
   { href: "/pantry", icon: Archive, label: "食材庫" },
 ];
 
-const footerItems = [
-  { href: "/concept", icon: FileText, label: "コンセプト" },
-  { href: "/settings", icon: Settings, label: "設定" },
-];
-
 function isActive(href: string, pathname: string) {
   if (href === "/dashboard") return pathname === "/dashboard";
   return pathname.startsWith(href);
@@ -87,9 +82,22 @@ function isActive(href: string, pathname: string) {
 
 export function CookGoSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isDark, setIsDark] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      setDisplayName(
+        user.user_metadata?.display_name || user.email?.split("@")[0] || "User",
+      );
+      setEmail(user.email || "");
+      setAvatarUrl(user.user_metadata?.avatar_url || "");
+    });
     const update = () =>
       setIsDark(document.documentElement.classList.contains("dark"));
     update();
@@ -201,42 +209,31 @@ export function CookGoSidebar() {
 
       {/* フッター */}
       <SidebarFooter>
-        <SidebarMenu>
-          {/* サブページ（設定） */}
-          {footerItems.map(({ href, icon: Icon, label }) => (
-            <SidebarMenuItem key={href}>
-              <SidebarMenuButton asChild isActive={pathname === href}>
-                <Link href={href}>
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {label}
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-
-          {/* テーマ切り替え */}
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={toggleTheme} className="cursor-pointer">
-              {isDark ? (
-                <Moon className="h-4 w-4 shrink-0" />
-              ) : (
-                <Sun className="h-4 w-4 shrink-0" />
-              )}
-              {isDark ? "ダーク" : "ライト"}
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-
-          {/* ログアウト */}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={handleSignOut}
-              className="cursor-pointer"
-            >
-              <LogOut className="h-4 w-4 shrink-0" />
-              ログアウト
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <UserMenu
+          displayName={displayName || "—"}
+          email={email}
+          avatarUrl={avatarUrl}
+          items={[
+            {
+              title: "コンセプト",
+              icon: FileText,
+              onSelect: () => router.push("/concept"),
+              isActive: pathname.startsWith("/concept"),
+            },
+            {
+              title: "設定",
+              icon: Settings,
+              onSelect: () => router.push("/settings"),
+              isActive: pathname.startsWith("/settings"),
+            },
+            {
+              title: isDark ? "ダーク" : "ライト",
+              icon: isDark ? Moon : Sun,
+              onSelect: toggleTheme,
+            },
+          ]}
+          signOut={{ onSelect: handleSignOut }}
+        />
       </SidebarFooter>
 
       <SidebarRail />
