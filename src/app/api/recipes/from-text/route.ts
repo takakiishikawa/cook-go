@@ -80,7 +80,8 @@ ${text}
     const out =
       response.content[0].type === "text" ? response.content[0].text : "";
     const jsonMatch = out.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Claudeの応答からJSONを抽出できませんでした");
+    if (!jsonMatch)
+      throw new Error("Claudeの応答からJSONを抽出できませんでした");
 
     let parsed: RecipeImportClaudeResponse;
     try {

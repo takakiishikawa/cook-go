@@ -153,7 +153,8 @@ ${text}
     const out =
       response.content[0].type === "text" ? response.content[0].text : "";
     const jsonMatch = out.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Claudeの応答からJSONを抽出できませんでした");
+    if (!jsonMatch)
+      throw new Error("Claudeの応答からJSONを抽出できませんでした");
 
     let parsed: RecipeImportClaudeResponse;
     try {
@@ -162,7 +163,12 @@ ${text}
       throw new Error("Claudeの応答JSONが不正です");
     }
     const r: SuggestedRecipe = parsed.recipe;
-    if (!r || !r.title || !Array.isArray(r.ingredients) || !Array.isArray(r.steps)) {
+    if (
+      !r ||
+      !r.title ||
+      !Array.isArray(r.ingredients) ||
+      !Array.isArray(r.steps)
+    ) {
       throw new Error("レシピ情報を取得できませんでした");
     }
 
