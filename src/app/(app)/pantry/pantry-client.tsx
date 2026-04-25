@@ -218,7 +218,7 @@ export function PantryClient({
                       e.key === "Enter" && addItem()
                     }
                   />
-                  <div className="flex items-center gap-1.5 min-h-[24px]">
+                  <div className="flex items-center gap-1.5 min-h-6">
                     {fetchingSuggest ? (
                       <span className="text-xs text-muted-foreground">
                         カテゴリー判定中...
