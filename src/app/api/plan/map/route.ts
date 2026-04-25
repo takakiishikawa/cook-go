@@ -81,7 +81,9 @@ export async function POST(request: Request) {
 
     if (dates.length === 0) {
       return NextResponse.json(
-        { error: "登録対象の日付がありません（曜日や終了日を確認してください）" },
+        {
+          error: "登録対象の日付がありません（曜日や終了日を確認してください）",
+        },
         { status: 400 },
       );
     }
