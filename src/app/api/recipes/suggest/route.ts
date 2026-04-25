@@ -2,7 +2,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { DB_SCHEMA, CLAUDE_SONNET } from "@/lib/constants";
-import type { SuggestedRecipe, RecipeSuggestClaudeResponse } from "@/types/api";
+import type {
+  SuggestedRecipe,
+  RecipeSuggestClaudeResponse,
+  RecipeSuggestRequest,
+} from "@/types/api";
 
 const client = new Anthropic();
 
@@ -24,8 +28,17 @@ async function fetchUnsplashImage(query: string): Promise<string | null> {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    let body: RecipeSuggestRequest = {};
+    try {
+      body = (await request.json()) as RecipeSuggestRequest;
+    } catch {
+      // body省略時は空オブジェクト
+    }
+    const mainIngredient = body.main_ingredient?.trim() ?? "";
+    const tags = (body.tags ?? []).filter((t) => typeof t === "string");
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -83,6 +96,16 @@ export async function POST() {
           ) / 7
         : 0;
 
+    const userRequestSection: string[] = [];
+    if (mainIngredient) {
+      userRequestSection.push(
+        `- メイン食材として「${mainIngredient}」を必ず使用すること`,
+      );
+    }
+    if (tags.length > 0) {
+      userRequestSection.push(`- 好み・条件タグ: ${tags.join(", ")}`);
+    }
+
     const prompt = `あなたは栄養士兼料理家です。以下の情報をもとに、今週のミールプレップ向けレシピを4〜5件提案してください。
 
 【ユーザー情報】
@@ -96,9 +119,11 @@ ${pantryItems.map((p) => p.name).join(", ") || "なし"}
 【過去に提案した料理（重複を避ける）】
 ${pastRecipes.map((r) => r.title).join(", ") || "なし"}
 
-【固定条件】
-- タンパク質多め（1食あたり30g以上推奨）
-- 作り置き可能であること（meal_prep_days は作り置き可能日数）
+【ユーザーリクエスト】
+${userRequestSection.length > 0 ? userRequestSection.join("\n") : "- 特になし（おまかせ）"}
+
+【固定条件（最優先・必ず守る）】
+- 高タンパク（1食あたり30g以上、可能なら40g以上）
 - ホーチミン市内のスーパーで手に入る食材を使用
 - 調理時間は60分以内
 

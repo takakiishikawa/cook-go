@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Clock, RefreshCw, UtensilsCrossed, CheckCircle2 } from "lucide-react";
+import {
+  Clock,
+  Plus,
+  RefreshCw,
+  Sparkles,
+  Link2,
+  UtensilsCrossed,
+  CheckCircle2,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Button,
@@ -16,6 +24,12 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  Input,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { Recipe } from "@/types/database";
@@ -110,27 +124,93 @@ interface RecipesClientProps {
   recipes: Recipe[];
 }
 
+const SUGGEST_TAGS = [
+  "作り置き",
+  "時短(30分以内)",
+  "和食",
+  "中華",
+  "洋食",
+  "エスニック",
+] as const;
+
 export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
   const router = useRouter();
   const supabase = createClient();
   const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addMode, setAddMode] = useState<"ai" | "url">("ai");
   const [generating, setGenerating] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [mainIngredient, setMainIngredient] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [importUrl, setImportUrl] = useState("");
 
   const tried = recipes.filter((r) => r.is_tried);
   const untried = recipes.filter((r) => !r.is_tried);
 
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  };
+
+  const resetAddForm = () => {
+    setMainIngredient("");
+    setSelectedTags([]);
+    setImportUrl("");
+  };
+
   const generateRecipes = async () => {
     setGenerating(true);
     try {
-      const res = await fetch("/api/recipes/suggest", { method: "POST" });
+      const res = await fetch("/api/recipes/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          main_ingredient: mainIngredient.trim() || undefined,
+          tags: selectedTags,
+        }),
+      });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setRecipes([...data.recipes, ...recipes]);
       toast.success(`${data.recipes.length}件のレシピを提案しました`);
-    } catch {
-      toast.error("レシピ提案に失敗しました");
+      setAddOpen(false);
+      resetAddForm();
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "レシピ提案に失敗しました";
+      toast.error(msg);
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const importFromUrl = async () => {
+    const url = importUrl.trim();
+    if (!url) {
+      toast.error("URLを入力してください");
+      return;
+    }
+    setImporting(true);
+    try {
+      const res = await fetch("/api/recipes/import-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setRecipes([data.recipe, ...recipes]);
+      toast.success(`「${data.recipe.title}」を追加しました`);
+      setAddOpen(false);
+      resetAddForm();
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "URLからの取込に失敗しました";
+      toast.error(msg);
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -181,15 +261,16 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
           description={`${recipes.length}件`}
           actions={
             <Button
-              onClick={generateRecipes}
-              disabled={generating}
+              onClick={() => {
+                resetAddForm();
+                setAddMode("ai");
+                setAddOpen(true);
+              }}
               size="sm"
               className="gap-1.5"
             >
-              <RefreshCw
-                className={`w-3.5 h-3.5 ${generating ? "animate-spin" : ""}`}
-              />
-              {generating ? "提案中..." : "AIに提案してもらう"}
+              <Plus className="w-3.5 h-3.5" />
+              レシピを追加
             </Button>
           }
         />
@@ -219,7 +300,7 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
               <EmptyState
                 icon={<UtensilsCrossed className="w-6 h-6" />}
                 title="レシピがまだありません"
-                description="上のボタンを押してAIにレシピを提案してもらいましょう"
+                description="「レシピを追加」からAI提案またはURL取込で登録できます"
               />
             ) : (
               <RecipeGrid items={untried} />
@@ -231,6 +312,142 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog
+        open={addOpen}
+        onOpenChange={(open) => {
+          if (generating || importing) return;
+          setAddOpen(open);
+          if (!open) resetAddForm();
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>レシピを追加</DialogTitle>
+            <DialogDescription>
+              AIに提案してもらうか、レシピページのURLから取り込めます。
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs
+            value={addMode}
+            onValueChange={(v) => setAddMode(v as "ai" | "url")}
+          >
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="ai" className="gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                AI提案
+              </TabsTrigger>
+              <TabsTrigger value="url" className="gap-1.5">
+                <Link2 className="w-3.5 h-3.5" />
+                URLから追加
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="ai" className="mt-4 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">
+                  メイン食材（任意）
+                </label>
+                <Input
+                  placeholder="例: 鶏胸肉"
+                  value={mainIngredient}
+                  onChange={(e) => setMainIngredient(e.target.value)}
+                  disabled={generating}
+                />
+                <p className="text-xs text-muted-foreground">
+                  入れた食材を中心としたレシピを提案します
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">タグ（任意）</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {SUGGEST_TAGS.map((tag) => {
+                    const active = selectedTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleTag(tag)}
+                        disabled={generating}
+                        className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                          active
+                            ? "bg-primary text-white border-primary"
+                            : "bg-surface-subtle text-foreground border-border hover:border-primary/40"
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  高タンパクは常に前提条件です
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setAddOpen(false)}
+                  disabled={generating}
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  className="flex-1 gap-1.5"
+                  onClick={generateRecipes}
+                  disabled={generating}
+                >
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 ${generating ? "animate-spin" : ""}`}
+                  />
+                  {generating ? "提案中..." : "提案してもらう"}
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="url" className="mt-4 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">レシピのURL</label>
+                <Input
+                  type="url"
+                  placeholder="https://example.com/recipe/..."
+                  value={importUrl}
+                  onChange={(e) => setImportUrl(e.target.value)}
+                  disabled={importing}
+                />
+                <p className="text-xs text-muted-foreground">
+                  該当ページから材料・手順を抽出して保存します
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setAddOpen(false)}
+                  disabled={importing}
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  className="flex-1 gap-1.5"
+                  onClick={importFromUrl}
+                  disabled={importing || !importUrl.trim()}
+                >
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 ${importing ? "animate-spin" : ""}`}
+                  />
+                  {importing ? "取込中..." : "取り込む"}
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

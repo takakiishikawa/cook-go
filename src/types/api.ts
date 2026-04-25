@@ -32,6 +32,19 @@ export interface RecipeSuggestClaudeResponse {
   recipes: SuggestedRecipe[];
 }
 
+export interface RecipeSuggestRequest {
+  main_ingredient?: string;
+  tags?: string[];
+}
+
+export interface RecipeImportUrlRequest {
+  url: string;
+}
+
+export interface RecipeImportClaudeResponse {
+  recipe: SuggestedRecipe;
+}
+
 // Plan mapping
 export interface PlanMapRequest {
   recipe_id: string;
