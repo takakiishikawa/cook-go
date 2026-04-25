@@ -162,7 +162,8 @@ export function PlanClient({
       setSelectedCell(null);
       await fetchWeek(weekStart);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "献立の登録に失敗しました";
+      const msg =
+        err instanceof Error ? err.message : "献立の登録に失敗しました";
       toast.error(msg);
     } finally {
       setSaving(false);
