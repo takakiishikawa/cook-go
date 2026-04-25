@@ -11,7 +11,6 @@ import {
   UtensilsCrossed,
   CheckCircle2,
 } from "lucide-react";
-import { toast } from "sonner";
 import {
   Button,
   Badge,
@@ -30,6 +29,7 @@ import {
   DialogTitle,
   DialogDescription,
   Input,
+  toast,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { Recipe } from "@/types/database";

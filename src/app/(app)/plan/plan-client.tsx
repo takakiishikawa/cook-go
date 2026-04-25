@@ -10,7 +10,6 @@ import {
   CalendarDays,
   RefreshCw,
 } from "lucide-react";
-import { toast } from "sonner";
 import {
   Button,
   PageHeader,
@@ -26,6 +25,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  toast,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import {

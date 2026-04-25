@@ -13,7 +13,6 @@ import {
   Flame,
   Beef,
 } from "lucide-react";
-import { toast } from "sonner";
 import { AppHeader } from "@/components/layout/app-header";
 import {
   Button,
@@ -23,6 +22,7 @@ import {
   CardContent,
   Section,
   PageHeader,
+  toast,
 } from "@takaki/go-design-system";
 import { Recipe, RecipeIngredient, RecipeStep } from "@/types/database";
 import { cn } from "@/lib/utils";

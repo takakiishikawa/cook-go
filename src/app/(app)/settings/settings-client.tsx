@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, User, Activity, Info } from "lucide-react";
-import { toast } from "sonner";
 import {
   Button,
   Input,
@@ -17,6 +16,7 @@ import {
   Card,
   CardContent,
   PageHeader,
+  toast,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { UserSettings } from "@/types/database";

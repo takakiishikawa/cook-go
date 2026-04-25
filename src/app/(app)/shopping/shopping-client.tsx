@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Plus, Trash2, ShoppingBag, Globe, ImageOff } from "lucide-react";
-import { toast } from "sonner";
 import {
   Button,
   Checkbox,
@@ -24,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Section,
+  toast,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
 import { ShoppingListItem } from "@/types/database";
