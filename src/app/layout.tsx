@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_JP } from "next/font/google";
 import { DesignTokens, Toaster } from "@takaki/go-design-system";
+import { Analytics } from "@vercel/analytics/react";
 import { PwaRegister } from "@/components/pwa-register";
 import { DarkModeInit } from "@/components/dark-mode-init";
 import "./globals.css";
@@ -64,6 +65,7 @@ export default function RootLayout({
         {children}
         <Toaster position="top-center" richColors />
         <PwaRegister />
+        <Analytics />
       </body>
     </html>
   );
