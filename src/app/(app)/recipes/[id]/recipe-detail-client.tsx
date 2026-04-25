@@ -50,7 +50,13 @@ function RecipeHeroImage({ recipe }: { recipe: Recipe }) {
     );
   }
   return (
-    <img src={src} alt={recipe.title} className="w-full h-56 object-cover" />
+    <img
+      src={src}
+      alt={recipe.title}
+      className="w-full h-56 object-cover"
+      fetchPriority="high"
+      loading="eager"
+    />
   );
 }
 
@@ -62,6 +68,8 @@ function StepImage({ query }: { query: string | null }) {
       src={imageUrl}
       alt={query ?? ""}
       className="w-16 h-16 rounded-md object-cover flex-shrink-0"
+      loading="lazy"
+      decoding="async"
     />
   );
 }

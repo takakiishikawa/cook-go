@@ -60,6 +60,8 @@ function RecipeImage({ title }: { title: string }) {
       src={imageUrl}
       alt={title}
       className="w-full h-40 object-cover bg-muted"
+      loading="lazy"
+      decoding="async"
     />
   );
 }
