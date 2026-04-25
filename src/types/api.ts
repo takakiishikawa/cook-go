@@ -45,6 +45,10 @@ export interface RecipeImportClaudeResponse {
   recipe: SuggestedRecipe;
 }
 
+export interface RecipeFromTextRequest {
+  text: string;
+}
+
 // Plan mapping
 export interface PlanMapRequest {
   recipe_id: string;

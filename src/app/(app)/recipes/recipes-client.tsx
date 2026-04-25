@@ -8,6 +8,7 @@ import {
   RefreshCw,
   Sparkles,
   Link2,
+  PencilLine,
   UtensilsCrossed,
   CheckCircle2,
 } from "lucide-react";
@@ -29,6 +30,7 @@ import {
   DialogTitle,
   DialogDescription,
   Input,
+  Textarea,
   toast,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
@@ -138,12 +140,14 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
   const supabase = createClient();
   const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
   const [addOpen, setAddOpen] = useState(false);
-  const [addMode, setAddMode] = useState<"ai" | "url">("ai");
+  const [addMode, setAddMode] = useState<"ai" | "url" | "text">("ai");
   const [generating, setGenerating] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [creatingFromText, setCreatingFromText] = useState(false);
   const [mainIngredient, setMainIngredient] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [importUrl, setImportUrl] = useState("");
+  const [freeText, setFreeText] = useState("");
 
   const tried = recipes.filter((r) => r.is_tried);
   const untried = recipes.filter((r) => !r.is_tried);
@@ -158,6 +162,7 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
     setMainIngredient("");
     setSelectedTags([]);
     setImportUrl("");
+    setFreeText("");
   };
 
   const generateRecipes = async () => {
@@ -211,6 +216,34 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
       toast.error(msg);
     } finally {
       setImporting(false);
+    }
+  };
+
+  const createFromText = async () => {
+    const text = freeText.trim();
+    if (!text) {
+      toast.error("メモを入力してください");
+      return;
+    }
+    setCreatingFromText(true);
+    try {
+      const res = await fetch("/api/recipes/from-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setRecipes([data.recipe, ...recipes]);
+      toast.success(`「${data.recipe.title}」を追加しました`);
+      setAddOpen(false);
+      resetAddForm();
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "レシピ生成に失敗しました";
+      toast.error(msg);
+    } finally {
+      setCreatingFromText(false);
     }
   };
 
@@ -300,7 +333,7 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
               <EmptyState
                 icon={<UtensilsCrossed className="w-6 h-6" />}
                 title="レシピがまだありません"
-                description="「レシピを追加」からAI提案またはURL取込で登録できます"
+                description="「レシピを追加」から AI提案 / URL / メモ で登録できます"
               />
             ) : (
               <RecipeGrid items={untried} />
@@ -316,7 +349,7 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
       <Dialog
         open={addOpen}
         onOpenChange={(open) => {
-          if (generating || importing) return;
+          if (generating || importing || creatingFromText) return;
           setAddOpen(open);
           if (!open) resetAddForm();
         }}
@@ -325,22 +358,26 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
           <DialogHeader>
             <DialogTitle>レシピを追加</DialogTitle>
             <DialogDescription>
-              AIに提案してもらうか、レシピページのURLから取り込めます。
+              AI提案・URL取込・自分で書く から選べます。
             </DialogDescription>
           </DialogHeader>
 
           <Tabs
             value={addMode}
-            onValueChange={(v) => setAddMode(v as "ai" | "url")}
+            onValueChange={(v) => setAddMode(v as "ai" | "url" | "text")}
           >
-            <TabsList className="grid grid-cols-2 w-full">
+            <TabsList className="grid grid-cols-3 w-full">
               <TabsTrigger value="ai" className="gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 AI提案
               </TabsTrigger>
               <TabsTrigger value="url" className="gap-1.5">
                 <Link2 className="w-3.5 h-3.5" />
-                URLから追加
+                URL
+              </TabsTrigger>
+              <TabsTrigger value="text" className="gap-1.5">
+                <PencilLine className="w-3.5 h-3.5" />
+                自分で書く
               </TabsTrigger>
             </TabsList>
 
@@ -442,6 +479,45 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
                     className={`w-3.5 h-3.5 ${importing ? "animate-spin" : ""}`}
                   />
                   {importing ? "取込中..." : "取り込む"}
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="text" className="mt-4 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">レシピのメモ</label>
+                <Textarea
+                  rows={6}
+                  placeholder={
+                    "例: 鶏胸肉をマヨネーズと醤油で焼く。\n副菜にブロッコリーを蒸す。\n2人分。"
+                  }
+                  value={freeText}
+                  onChange={(e) => setFreeText(e.target.value)}
+                  disabled={creatingFromText}
+                />
+                <p className="text-xs text-muted-foreground">
+                  ざっくり書けばAIが整ったレシピに仕上げて保存します（高タンパク前提）
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setAddOpen(false)}
+                  disabled={creatingFromText}
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  className="flex-1 gap-1.5"
+                  onClick={createFromText}
+                  disabled={creatingFromText || !freeText.trim()}
+                >
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 ${creatingFromText ? "animate-spin" : ""}`}
+                  />
+                  {creatingFromText ? "生成中..." : "レシピにする"}
                 </Button>
               </div>
             </TabsContent>
