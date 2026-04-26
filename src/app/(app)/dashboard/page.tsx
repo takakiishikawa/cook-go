@@ -2,7 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { DashboardClient } from "./dashboard-client";
-import { MEAL_TYPES, type FoodLogWithRecipe, type MealType } from "@/types/database";
+import {
+  MEAL_TYPES,
+  type FoodLogWithRecipe,
+  type MealType,
+} from "@/types/database";
 
 export default async function DashboardPage() {
   const supabase = await createClient();

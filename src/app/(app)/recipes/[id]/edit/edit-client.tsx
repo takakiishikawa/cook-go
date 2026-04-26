@@ -59,9 +59,7 @@ export function EditRecipeClient({
       if (data.error) throw new Error(data.error);
       setImageUrl(data.image_url ?? null);
       toast.success(
-        data.image_url
-          ? "画像を再生成しました"
-          : "画像を取得できませんでした",
+        data.image_url ? "画像を再生成しました" : "画像を取得できませんでした",
       );
       router.refresh();
     } catch (err) {

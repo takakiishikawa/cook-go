@@ -76,7 +76,10 @@ function normalizeIngredient(raw: unknown): RecipeIngredient | null {
     name,
     name_en: asString(r.name_en),
     name_vi: asString(r.name_vi),
-    amount: typeof r.amount === "number" ? String(r.amount) : (asString(r.amount) ?? ""),
+    amount:
+      typeof r.amount === "number"
+        ? String(r.amount)
+        : (asString(r.amount) ?? ""),
     unit: asString(r.unit) ?? "",
     protein_g: asNumber(r.protein_g),
     in_pantry: r.in_pantry === true,

@@ -56,9 +56,11 @@ export async function POST(request: Request) {
       ]);
 
     const recentRecipes = (recentRecipesResult.data ?? []).map((r) => r.title);
-    const recentLogTitles = ((recentLogsResult.data ?? []) as unknown as Array<{
-      recipe: { title: string } | null;
-    }>)
+    const recentLogTitles = (
+      (recentLogsResult.data ?? []) as unknown as Array<{
+        recipe: { title: string } | null;
+      }>
+    )
       .map((l) => l.recipe?.title)
       .filter((t): t is string => !!t);
     const avoid = Array.from(new Set([...recentRecipes, ...recentLogTitles]));

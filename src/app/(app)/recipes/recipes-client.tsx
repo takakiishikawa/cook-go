@@ -34,9 +34,7 @@ import { LogMealDialog } from "@/components/log-meal-dialog";
 
 function RecipeImage({ recipe }: { recipe: Recipe }) {
   const query = recipe.title_en ?? recipe.title;
-  const { imageUrl, loading } = useFoodImage(
-    recipe.image_url ? null : query,
-  );
+  const { imageUrl, loading } = useFoodImage(recipe.image_url ? null : query);
   const src = recipe.image_url ?? imageUrl;
 
   if (!recipe.image_url && loading) return <Skeleton className="w-full h-40" />;

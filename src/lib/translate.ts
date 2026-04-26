@@ -39,9 +39,7 @@ ${list.map((n) => `- ${n}`).join("\n")}`,
   }
 }
 
-export async function translateTitle(
-  title: string,
-): Promise<string | null> {
+export async function translateTitle(title: string): Promise<string | null> {
   const t = await translateNames([title]);
   return t[title]?.en ?? null;
 }
