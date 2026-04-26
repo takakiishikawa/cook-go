@@ -13,6 +13,7 @@ export interface RecipeIngredient {
   amount: string;
   unit: string | null;
   protein_g: number | null;
+  kcal_kcal: number | null;
   in_pantry: boolean;
   category: string | null;
 }

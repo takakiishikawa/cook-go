@@ -1,21 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, User, Activity, Info } from "lucide-react";
+import { LogOut } from "lucide-react";
 import {
   Button,
   Input,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  SettingsGroup,
-  SettingsItem,
-  Separator,
-  SettingsPage,
   Card,
   CardContent,
   PageHeader,
+  Section,
   toast,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
@@ -25,32 +19,38 @@ import { db } from "@/lib/db";
 
 interface SettingsClientProps {
   userId: string;
-  userEmail: string;
-  userName: string;
-  userAvatar: string;
   settings: UserSettings | null;
 }
 
-export function SettingsClient({
-  userId,
-  userEmail,
-  userName,
-  userAvatar,
-  settings,
-}: SettingsClientProps) {
+export function SettingsClient({ userId, settings }: SettingsClientProps) {
   const router = useRouter();
   const supabase = createClient();
   const [proteinTarget, setProteinTarget] = useState(
     String(settings?.protein_target_g ?? 108),
   );
   const [weightKg, setWeightKg] = useState(String(settings?.weight_kg ?? ""));
+  const initialMultiplier =
+    settings?.weight_kg && settings?.protein_target_g
+      ? Math.round((settings.protein_target_g / settings.weight_kg) * 10) / 10
+      : 1.5;
+  const [multiplier, setMultiplier] = useState<number>(initialMultiplier);
   const [saving, setSaving] = useState(false);
+
+  const weightNum = useMemo(() => parseFloat(weightKg), [weightKg]);
+  const computedTarget = useMemo(() => {
+    if (Number.isFinite(weightNum)) return Math.round(weightNum * multiplier);
+    return null;
+  }, [weightNum, multiplier]);
+
+  const applyComputed = () => {
+    if (computedTarget != null) setProteinTarget(String(computedTarget));
+  };
 
   const handleSave = async () => {
     setSaving(true);
     const { error } = await db.settings.upsert(supabase, {
       user_id: userId,
-      protein_target_g: parseInt(proteinTarget),
+      protein_target_g: parseInt(proteinTarget) || 0,
       weight_kg: weightKg ? parseFloat(weightKg) : null,
     });
     setSaving(false);
@@ -58,7 +58,7 @@ export function SettingsClient({
       toast.error("保存に失敗しました");
       return;
     }
-    toast.success("設定を保存しました");
+    toast.success("保存しました");
   };
 
   const handleLogout = async () => {
@@ -67,138 +67,111 @@ export function SettingsClient({
     router.refresh();
   };
 
-  const calcProteinTarget = () => {
-    const weight = parseFloat(weightKg);
-    if (!isNaN(weight)) setProteinTarget(String(Math.round(weight * 1.5)));
-  };
-
   return (
     <div className="flex flex-col">
       <AppHeader />
 
-      <div className="px-4 md:px-8 pt-5 max-w-3xl">
+      <div className="px-4 md:px-8 pt-5 pb-8 space-y-5 max-w-2xl">
         <PageHeader title="設定" />
-      </div>
 
-      <SettingsPage
-        title=""
-        sections={[
-          {
-            id: "profile",
-            label: "プロフィール",
-            icon: <User className="w-4 h-4" />,
-            content: (
-              <div className="space-y-6">
-                <div className="flex items-center gap-4 py-2">
-                  <Avatar className="w-16 h-16">
-                    <AvatarImage src={userAvatar} />
-                    <AvatarFallback className="bg-surface-subtle text-muted-foreground">
-                      <User className="w-7 h-7" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-lg font-semibold text-foreground">
-                      {userName || "ユーザー"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{userEmail}</p>
-                  </div>
+        <Section title="タンパク質目標">
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground">
+                    体重 (kg)
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="72"
+                    value={weightKg}
+                    onChange={(e) => setWeightKg(e.target.value)}
+                  />
                 </div>
-                <Separator />
-                <Button
-                  variant="outline"
-                  onClick={handleLogout}
-                  className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/5"
-                >
-                  <LogOut className="w-4 h-4" />
-                  ログアウト
-                </Button>
-              </div>
-            ),
-          },
-          {
-            id: "body",
-            label: "身体情報",
-            icon: <Activity className="w-4 h-4" />,
-            content: (
-              <div className="space-y-5">
-                <SettingsGroup
-                  title="身体情報"
-                  description="体重からタンパク質目標を自動計算できます"
-                >
-                  <SettingsItem
-                    label="体重 (kg)"
-                    description="体重×1.5gでタンパク質目標を自動計算"
-                    control={
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          placeholder="72"
-                          value={weightKg}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            setWeightKg(e.target.value)
-                          }
-                          className="w-24"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={calcProteinTarget}
-                          disabled={!weightKg}
-                        >
-                          自動計算
-                        </Button>
-                      </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground">
+                    係数 (×g/kg)
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0.5"
+                    max="3"
+                    value={String(multiplier)}
+                    onChange={(e) =>
+                      setMultiplier(parseFloat(e.target.value) || 0)
                     }
                   />
-                  <SettingsItem
-                    label="タンパク質目標 (g/日)"
-                    control={
-                      <Input
-                        type="number"
-                        value={proteinTarget}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setProteinTarget(e.target.value)
-                        }
-                        className="w-24"
-                      />
-                    }
-                  />
-                </SettingsGroup>
-
-                <Card>
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex gap-2">
-                      <Info className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">
-                          目標の参考値
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          筋肉増量: 体重×1.6〜2.2g
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          体脂肪減少: 体重×1.2〜1.6g
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          一般維持: 体重×0.8〜1.0g
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="w-full h-11"
-                >
-                  {saving ? "保存中..." : "設定を保存する"}
-                </Button>
+                </div>
               </div>
-            ),
-          },
-        ]}
-      />
+
+              <div>
+                <input
+                  type="range"
+                  min={0.8}
+                  max={2.5}
+                  step={0.1}
+                  value={multiplier}
+                  onChange={(e) => setMultiplier(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground mt-0.5">
+                  <span>0.8</span>
+                  <span>1.5</span>
+                  <span>2.5</span>
+                </div>
+              </div>
+
+              {computedTarget != null && (
+                <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-md px-3 py-2">
+                  <span className="text-sm">
+                    {weightNum} × {multiplier} = {" "}
+                    <span className="font-semibold text-primary">
+                      {computedTarget}g/日
+                    </span>
+                  </span>
+                  <Button size="sm" variant="outline" onClick={applyComputed}>
+                    目標に反映
+                  </Button>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">
+                  タンパク質目標 (g/日)
+                </label>
+                <Input
+                  type="number"
+                  value={proteinTarget}
+                  onChange={(e) => setProteinTarget(e.target.value)}
+                />
+              </div>
+
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full"
+              >
+                {saving ? "保存中..." : "保存"}
+              </Button>
+            </CardContent>
+          </Card>
+        </Section>
+
+        <Section title="アカウント">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/5"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            ログアウト
+          </Button>
+        </Section>
+      </div>
     </div>
   );
 }

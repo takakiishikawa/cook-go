@@ -242,7 +242,7 @@ export function DashboardClient({
     <div className="flex flex-col">
       <AppHeader />
 
-      <div className="px-4 md:px-8 pt-5 pb-8 space-y-6 max-w-3xl">
+      <div className="px-4 md:px-8 pt-5 pb-8 space-y-6 max-w-5xl">
         <PageHeader title="ダッシュボード" />
 
         {/* Date navigation */}
@@ -275,31 +275,56 @@ export function DashboardClient({
           )}
         </div>
 
-        {/* Protein gauge */}
-        <Card>
-          <CardContent className="py-4 space-y-2">
-            <div className="flex items-baseline justify-between">
-              <span className="text-sm text-muted-foreground">
-                {formatDate(date)} のタンパク質
-              </span>
-              <span className="text-sm">
-                <span className="text-2xl font-bold text-primary">
-                  {Math.round(totalProteinToday)}
+        {/* Stats row: today + week avg */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Card>
+            <CardContent className="py-4 space-y-2">
+              <div className="flex items-baseline justify-between">
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(date)} のタンパク質
                 </span>
-                <span className="text-muted-foreground">
-                  {" "}
-                  / {proteinTarget}g
+                <span className="text-sm">
+                  <span className="text-2xl font-bold text-primary">
+                    {Math.round(totalProteinToday)}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    / {proteinTarget}g
+                  </span>
                 </span>
+              </div>
+              <div className="h-2 bg-surface-subtle rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${targetPct}%` }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="py-4 space-y-1">
+              <span className="text-xs text-muted-foreground">
+                直近1週間 平均/日
               </span>
-            </div>
-            <div className="h-2 bg-surface-subtle rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all"
-                style={{ width: `${targetPct}%` }}
-              />
-            </div>
-          </CardContent>
-        </Card>
+              <div className="flex items-baseline justify-between">
+                <span>
+                  <span className="text-2xl font-bold text-foreground">
+                    {Math.round(lastWeekAvg)}
+                  </span>
+                  <span className="text-muted-foreground text-sm"> g/日</span>
+                </span>
+                <span
+                  className={`text-xs font-medium ${
+                    weekDelta >= 0 ? "text-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  先週比 {weekDelta >= 0 ? "+" : ""}
+                  {Math.round(weekDelta)}g
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Today's meals */}
         <div className="space-y-3">
@@ -313,7 +338,7 @@ export function DashboardClient({
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-3">
+            <div className="grid gap-3 md:grid-cols-2">
               {MEAL_TYPES.map((mt) => {
                 const logs = logsByMealType[mt];
                 const recentLogs = recent[mt] ?? [];
@@ -450,13 +475,8 @@ export function DashboardClient({
           )}
         </div>
 
-        {/* Weekly chart + summary */}
-        <Section
-          title="今週のタンパク質"
-          description={`平均 ${Math.round(lastWeekAvg)}g/日 ・ 先週比 ${
-            weekDelta >= 0 ? "+" : ""
-          }${Math.round(weekDelta)}g`}
-        >
+        {/* Weekly chart */}
+        <Section title="週次推移">
           <WeeklyChart weekData={weeklyData} target={proteinTarget} />
         </Section>
 

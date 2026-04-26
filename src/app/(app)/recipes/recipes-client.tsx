@@ -167,16 +167,17 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
   const untried = filtered.filter((r) => !r.is_tried);
 
   const deleteRecipe = async (recipe: Recipe) => {
-    if (!confirm(`「${recipe.title}」を削除しますか?`)) return;
+    setRecipes((prev) => prev.filter((r) => r.id !== recipe.id));
     try {
       const res = await fetch(`/api/recipes/${recipe.id}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setRecipes((prev) => prev.filter((r) => r.id !== recipe.id));
-      toast.success("削除しました");
+      toast.success(`「${recipe.title}」を削除しました`);
     } catch (err) {
+      // 失敗時はリストに戻す
+      setRecipes((prev) => [recipe, ...prev]);
       toast.error(err instanceof Error ? err.message : "削除に失敗しました");
     }
   };

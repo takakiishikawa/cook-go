@@ -31,6 +31,7 @@ function recipeToDraft(r: Recipe): DraftRecipe {
       ...ing,
       unit: ing.unit ?? "",
       protein_g: typeof ing.protein_g === "number" ? ing.protein_g : null,
+      kcal_kcal: typeof ing.kcal_kcal === "number" ? ing.kcal_kcal : null,
       in_pantry: ing.in_pantry ?? false,
     })),
     steps: (r.steps ?? []).map((s, i) => ({ ...s, order: s.order ?? i + 1 })),

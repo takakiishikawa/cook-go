@@ -116,7 +116,6 @@ export function RecipeDetailClient({
   const [logOpen, setLogOpen] = useState(false);
 
   const deleteRecipe = async () => {
-    if (!confirm(`「${recipe.title}」を削除しますか?`)) return;
     try {
       const res = await fetch(`/api/recipes/${recipe.id}`, {
         method: "DELETE",

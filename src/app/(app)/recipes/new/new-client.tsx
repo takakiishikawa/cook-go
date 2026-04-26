@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  RefreshCw,
-  Sparkles,
-  PencilLine,
-  Clock,
-} from "lucide-react";
+import { ArrowLeft, RefreshCw, Sparkles, PencilLine } from "lucide-react";
 import {
   Button,
   Input,
@@ -203,6 +197,7 @@ export function NewRecipeClient({
                 </p>
               </div>
               <Button
+                size="sm"
                 onClick={generateFromName}
                 disabled={generating}
                 className="w-full gap-1.5"
@@ -231,6 +226,7 @@ export function NewRecipeClient({
                 </p>
               </div>
               <Button
+                size="sm"
                 onClick={generateCandidates}
                 disabled={generating}
                 className="w-full gap-1.5"
@@ -286,18 +282,9 @@ export function NewRecipeClient({
                         {c.protein_g_per_serving && (
                           <Badge>P {c.protein_g_per_serving}g</Badge>
                         )}
-                        {c.prep_time_min && (
+                        {c.calorie_kcal_per_serving && (
                           <Badge variant="secondary">
-                            <Clock className="w-2.5 h-2.5 mr-1" />
-                            {c.prep_time_min}分
-                          </Badge>
-                        )}
-                        {c.is_meal_prep_friendly && (
-                          <Badge
-                            variant="outline"
-                            className="bg-warning-subtle text-warning border-transparent"
-                          >
-                            作り置き
+                            {c.calorie_kcal_per_serving}kcal
                           </Badge>
                         )}
                       </div>
@@ -308,6 +295,7 @@ export function NewRecipeClient({
             </div>
             <div className="flex gap-2 sticky bottom-0 bg-background py-3 -mx-4 px-4 md:-mx-8 md:px-8 border-t border-border">
               <Button
+                size="sm"
                 variant="outline"
                 className="flex-1"
                 onClick={() => setStep("input")}
@@ -315,6 +303,7 @@ export function NewRecipeClient({
                 戻る
               </Button>
               <Button
+                size="sm"
                 className="flex-1 gap-1.5"
                 onClick={saveSelectedCandidates}
                 disabled={saving || selected.size === 0}

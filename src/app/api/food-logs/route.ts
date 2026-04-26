@@ -39,18 +39,20 @@ function computeActualNutrition(
   servings: number,
   overrides: FoodLogOverrides | null,
 ): { actual_protein_g: number | null; actual_calorie_kcal: number | null } {
-  const baseServings = recipe.servings || 1;
   let proteinPerServing = recipe.protein_g_per_serving;
+  let kcalPerServing = recipe.calorie_kcal_per_serving;
   const ovIngs = overrides?.ingredients ?? [];
 
   if (ovIngs.length > 0 && Array.isArray(recipe.ingredients)) {
-    const baseTotal = recipe.ingredients.reduce(
+    const overrideMap = new Map<number, FoodLogIngredientOverride>();
+    for (const o of ovIngs) overrideMap.set(o.index, o);
+
+    // protein
+    const baseProteinTotal = recipe.ingredients.reduce(
       (sum, ing) => sum + (toFloat(ing.protein_g) ?? 0),
       0,
     );
-    const overrideMap = new Map<number, FoodLogIngredientOverride>();
-    for (const o of ovIngs) overrideMap.set(o.index, o);
-    const overriddenTotal = recipe.ingredients.reduce((sum, ing, i) => {
+    const overriddenProteinTotal = recipe.ingredients.reduce((sum, ing, i) => {
       const o = overrideMap.get(i);
       const protein =
         o?.protein_g !== undefined && o.protein_g !== null
@@ -58,10 +60,33 @@ function computeActualNutrition(
           : (toFloat(ing.protein_g) ?? 0);
       return sum + protein;
     }, 0);
-    if (baseTotal > 0 && proteinPerServing != null) {
-      proteinPerServing = (overriddenTotal / baseTotal) * proteinPerServing;
-    } else if (baseTotal === 0 && overriddenTotal > 0) {
-      proteinPerServing = overriddenTotal / baseServings;
+    if (baseProteinTotal > 0 && proteinPerServing != null) {
+      proteinPerServing =
+        (overriddenProteinTotal / baseProteinTotal) * proteinPerServing;
+    } else if (baseProteinTotal === 0 && overriddenProteinTotal > 0) {
+      proteinPerServing = overriddenProteinTotal;
+    }
+
+    // kcal: scale by amount ratio (only if base ingredient has both amount and kcal)
+    const baseKcalTotal = recipe.ingredients.reduce(
+      (sum, ing) => sum + (toFloat(ing.kcal_kcal) ?? 0),
+      0,
+    );
+    if (baseKcalTotal > 0) {
+      const overriddenKcalTotal = recipe.ingredients.reduce((sum, ing, i) => {
+        const o = overrideMap.get(i);
+        if (!o) return sum + (toFloat(ing.kcal_kcal) ?? 0);
+        const baseAmount = Number(ing.amount) || 0;
+        const overriddenAmount = Number(o.amount) || baseAmount;
+        const baseKcal = toFloat(ing.kcal_kcal) ?? 0;
+        const ratio = baseAmount > 0 ? overriddenAmount / baseAmount : 1;
+        return sum + baseKcal * ratio;
+      }, 0);
+      if (kcalPerServing != null) {
+        kcalPerServing = (overriddenKcalTotal / baseKcalTotal) * kcalPerServing;
+      } else {
+        kcalPerServing = overriddenKcalTotal;
+      }
     }
   }
 
@@ -70,8 +95,8 @@ function computeActualNutrition(
       ? Math.round(proteinPerServing * servings * 10) / 10
       : null;
   const actual_calorie_kcal =
-    recipe.calorie_kcal_per_serving != null
-      ? Math.round(recipe.calorie_kcal_per_serving * servings * 10) / 10
+    kcalPerServing != null
+      ? Math.round(kcalPerServing * servings * 10) / 10
       : null;
   return { actual_protein_g, actual_calorie_kcal };
 }

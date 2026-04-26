@@ -12,13 +12,5 @@ export default async function SettingsPage() {
 
   const settings = await db.settings.get(supabase, user.id);
 
-  return (
-    <SettingsClient
-      userId={user.id}
-      userEmail={user.email ?? ""}
-      userName={user.user_metadata?.full_name ?? ""}
-      userAvatar={user.user_metadata?.avatar_url ?? ""}
-      settings={settings}
-    />
-  );
+  return <SettingsClient userId={user.id} settings={settings} />;
 }

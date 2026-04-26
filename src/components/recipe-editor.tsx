@@ -41,6 +41,10 @@ function num(v: unknown): number {
   return typeof v === "number" && Number.isFinite(v) ? v : 0;
 }
 
+function round1(n: number): number {
+  return Math.round(n * 10) / 10;
+}
+
 export function RecipeEditor({
   initial,
   saving = false,
@@ -52,7 +56,7 @@ export function RecipeEditor({
 }: RecipeEditorProps) {
   const [draft, setDraft] = useState<DraftRecipe>(() => ({
     ...initial,
-    servings: initial.servings ?? 1,
+    servings: 1,
   }));
   const datalistId = useId();
 
@@ -64,11 +68,14 @@ export function RecipeEditor({
       ),
     [draft.ingredients],
   );
-
-  const proteinPerServing = useMemo(() => {
-    const servings = Math.max(1, draft.servings ?? 1);
-    return Math.round((totalProtein / servings) * 10) / 10;
-  }, [totalProtein, draft.servings]);
+  const totalKcal = useMemo(
+    () =>
+      draft.ingredients.reduce(
+        (s, i) => s + (typeof i.kcal_kcal === "number" ? i.kcal_kcal : 0),
+        0,
+      ),
+    [draft.ingredients],
+  );
 
   const setField = <K extends keyof DraftRecipe>(
     key: K,
@@ -96,6 +103,7 @@ export function RecipeEditor({
           amount: "",
           unit: "g",
           protein_g: 0,
+          kcal_kcal: 0,
           in_pantry: false,
           category: "other",
         },
@@ -110,41 +118,33 @@ export function RecipeEditor({
     }));
   };
 
+  const setAmountAndScale = (index: number, nextAmountStr: string) => {
+    const ing = draft.ingredients[index];
+    if (!ing) return;
+    if ((ing.unit ?? "") !== "g") {
+      setIngredient(index, { ...ing, amount: nextAmountStr });
+      return;
+    }
+    const baseAmount = num(Number(ing.amount));
+    const baseProtein = num(ing.protein_g);
+    const baseKcal = num(ing.kcal_kcal);
+    const next = num(Number(nextAmountStr));
+    const proteinRatio = baseAmount > 0 ? baseProtein / baseAmount : 0;
+    const kcalRatio = baseAmount > 0 ? baseKcal / baseAmount : 0;
+    setIngredient(index, {
+      ...ing,
+      amount: nextAmountStr,
+      protein_g: baseAmount > 0 ? round1(proteinRatio * next) : baseProtein,
+      kcal_kcal: baseAmount > 0 ? round1(kcalRatio * next) : baseKcal,
+    });
+  };
+
   const adjustAmountG = (index: number, delta: number) => {
     const ing = draft.ingredients[index];
     if (!ing || (ing.unit ?? "") !== "g") return;
     const current = num(Number(ing.amount));
     const next = Math.max(0, current + delta);
-    const baseAmount = num(Number(ing.amount));
-    const baseProtein = num(ing.protein_g);
-    const ratio = baseAmount > 0 ? baseProtein / baseAmount : 0;
-    const nextProtein =
-      baseAmount > 0 ? Math.round(ratio * next * 10) / 10 : baseProtein;
-    setIngredient(index, {
-      ...ing,
-      amount: String(next),
-      protein_g: nextProtein,
-    });
-  };
-
-  const setAmount = (index: number, value: string) => {
-    const ing = draft.ingredients[index];
-    if (!ing) return;
-    if ((ing.unit ?? "") !== "g") {
-      setIngredient(index, { ...ing, amount: value });
-      return;
-    }
-    const next = num(Number(value));
-    const baseAmount = num(Number(ing.amount));
-    const baseProtein = num(ing.protein_g);
-    const ratio = baseAmount > 0 ? baseProtein / baseAmount : 0;
-    const nextProtein =
-      baseAmount > 0 ? Math.round(ratio * next * 10) / 10 : baseProtein;
-    setIngredient(index, {
-      ...ing,
-      amount: value,
-      protein_g: nextProtein,
-    });
+    setAmountAndScale(index, String(next));
   };
 
   const setStep = (index: number, step: RecipeStep) => {
@@ -192,7 +192,9 @@ export function RecipeEditor({
       ...draft,
       title: draft.title.trim(),
       title_en: draft.title_en?.trim() || null,
-      protein_g_per_serving: proteinPerServing,
+      servings: 1,
+      protein_g_per_serving: round1(totalProtein),
+      calorie_kcal_per_serving: Math.round(totalKcal),
       is_meal_prep_friendly: false,
       meal_prep_days: null,
       ingredients: draft.ingredients
@@ -226,11 +228,7 @@ export function RecipeEditor({
           </div>
 
           {/* 自動計算/AI生成の値（読み取り専用） */}
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            <div className="bg-surface-subtle border border-border rounded-md px-3 py-2">
-              <p className="text-xs text-muted-foreground">食分</p>
-              <p className="text-sm font-semibold">{draft.servings ?? 1}食分</p>
-            </div>
+          <div className="grid grid-cols-3 gap-2">
             <div className="bg-surface-subtle border border-border rounded-md px-3 py-2">
               <p className="text-xs text-muted-foreground">調理時間</p>
               <p className="text-sm font-semibold">
@@ -238,27 +236,26 @@ export function RecipeEditor({
               </p>
             </div>
             <div className="bg-primary/5 border border-primary/20 rounded-md px-3 py-2">
-              <p className="text-xs text-muted-foreground">タンパク質/食</p>
+              <p className="text-xs text-muted-foreground">タンパク質</p>
               <p className="text-sm font-semibold text-primary">
-                {proteinPerServing}g
+                {round1(totalProtein)}g
               </p>
             </div>
             <div className="bg-surface-subtle border border-border rounded-md px-3 py-2">
-              <p className="text-xs text-muted-foreground">kcal/食</p>
+              <p className="text-xs text-muted-foreground">kcal</p>
               <p className="text-sm font-semibold">
-                {draft.calorie_kcal_per_serving ?? "-"}
+                {Math.round(totalKcal)}
               </p>
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            タンパク質は食材の合計から自動計算されます。
+            タンパク質・カロリーは食材の合計から自動計算されます（1食分）。
           </p>
         </div>
       </Section>
 
       <Section
         title="食材"
-        description={`合計タンパク質: ${totalProtein.toFixed(1)}g`}
         actions={
           <Button size="sm" variant="outline" onClick={addIngredient}>
             <Plus className="w-3.5 h-3.5 mr-1" />
@@ -313,7 +310,7 @@ export function RecipeEditor({
                       )}
                       <Input
                         value={ing.amount}
-                        onChange={(e) => setAmount(i, e.target.value)}
+                        onChange={(e) => setAmountAndScale(i, e.target.value)}
                         placeholder="量"
                         className="text-center"
                       />
@@ -335,28 +332,8 @@ export function RecipeEditor({
                       }
                       placeholder="単位"
                     />
-                    <Input
-                      className="col-span-3"
-                      type="number"
-                      value={
-                        typeof ing.protein_g === "number"
-                          ? String(ing.protein_g)
-                          : ""
-                      }
-                      onChange={(e) =>
-                        setIngredient(i, {
-                          ...ing,
-                          protein_g: e.target.value
-                            ? Number(e.target.value)
-                            : null,
-                        })
-                      }
-                      placeholder="P(g)"
-                      min={0}
-                      step="0.1"
-                    />
                     <select
-                      className="col-span-2 text-xs h-9 bg-background border border-border rounded-md px-1"
+                      className="col-span-5 text-xs h-9 bg-background border border-border rounded-md px-1"
                       value={ing.category ?? "other"}
                       onChange={(e) =>
                         setIngredient(i, { ...ing, category: e.target.value })
@@ -369,6 +346,56 @@ export function RecipeEditor({
                       ))}
                     </select>
                   </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">
+                        タンパク質(g)
+                      </label>
+                      <Input
+                        type="number"
+                        value={
+                          typeof ing.protein_g === "number"
+                            ? String(ing.protein_g)
+                            : ""
+                        }
+                        onChange={(e) =>
+                          setIngredient(i, {
+                            ...ing,
+                            protein_g: e.target.value
+                              ? Number(e.target.value)
+                              : null,
+                          })
+                        }
+                        placeholder="0"
+                        min={0}
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">
+                        カロリー(kcal)
+                      </label>
+                      <Input
+                        type="number"
+                        value={
+                          typeof ing.kcal_kcal === "number"
+                            ? String(ing.kcal_kcal)
+                            : ""
+                        }
+                        onChange={(e) =>
+                          setIngredient(i, {
+                            ...ing,
+                            kcal_kcal: e.target.value
+                              ? Number(e.target.value)
+                              : null,
+                          })
+                        }
+                        placeholder="0"
+                        min={0}
+                        step="1"
+                      />
+                    </div>
+                  </div>
                   {isG && Number(ing.amount) > 0 && (
                     <div className="px-1">
                       <input
@@ -377,7 +404,7 @@ export function RecipeEditor({
                         max={Math.max(500, Number(ing.amount) * 2)}
                         step={5}
                         value={Number(ing.amount) || 0}
-                        onChange={(e) => setAmount(i, e.target.value)}
+                        onChange={(e) => setAmountAndScale(i, e.target.value)}
                         className="w-full"
                       />
                     </div>
@@ -457,11 +484,21 @@ export function RecipeEditor({
 
       <div className="flex gap-2 pt-4 sticky bottom-0 bg-background border-t border-border py-3 -mx-4 px-4 md:-mx-8 md:px-8">
         {onCancel && (
-          <Button variant="outline" className="flex-1" onClick={onCancel}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1"
+            onClick={onCancel}
+          >
             {cancelLabel}
           </Button>
         )}
-        <Button className="flex-1 gap-1.5" onClick={submit} disabled={saving}>
+        <Button
+          size="sm"
+          className="flex-1 gap-1.5"
+          onClick={submit}
+          disabled={saving}
+        >
           {saving && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
           {saving ? "保存中..." : saveLabel}
         </Button>
