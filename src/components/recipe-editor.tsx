@@ -1,14 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  GripVertical,
-  Languages,
-  Minus,
-  Plus,
-  RefreshCw,
-  Trash2,
-} from "lucide-react";
+import { useId, useMemo, useState } from "react";
+import { GripVertical, Minus, Plus, RefreshCw, Trash2 } from "lucide-react";
 import {
   Button,
   Input,
@@ -20,7 +13,11 @@ import {
   toast,
 } from "@takaki/go-design-system";
 import type { DraftRecipe } from "@/types/api";
-import type { RecipeIngredient, RecipeStep } from "@/types/database";
+import type {
+  RecipeIngredient,
+  RecipeStep,
+  PantryItem,
+} from "@/types/database";
 
 const INGREDIENT_CATEGORIES = [
   { value: "protein", label: "タンパク源" },
@@ -37,6 +34,11 @@ interface RecipeEditorProps {
   onSave: (recipe: DraftRecipe) => Promise<void> | void;
   onCancel?: () => void;
   cancelLabel?: string;
+  pantryItems?: PantryItem[];
+}
+
+function num(v: unknown): number {
+  return typeof v === "number" && Number.isFinite(v) ? v : 0;
 }
 
 export function RecipeEditor({
@@ -46,18 +48,32 @@ export function RecipeEditor({
   onSave,
   onCancel,
   cancelLabel = "キャンセル",
+  pantryItems = [],
 }: RecipeEditorProps) {
-  const [draft, setDraft] = useState<DraftRecipe>(initial);
-  const [translatingIdx, setTranslatingIdx] = useState<number | null>(null);
+  const [draft, setDraft] = useState<DraftRecipe>(() => ({
+    ...initial,
+    servings: initial.servings ?? 1,
+  }));
+  const datalistId = useId();
 
-  const totalProtein = useMemo(() => {
-    return draft.ingredients.reduce(
-      (s, i) => s + (typeof i.protein_g === "number" ? i.protein_g : 0),
-      0,
-    );
-  }, [draft.ingredients]);
+  const totalProtein = useMemo(
+    () =>
+      draft.ingredients.reduce(
+        (s, i) => s + (typeof i.protein_g === "number" ? i.protein_g : 0),
+        0,
+      ),
+    [draft.ingredients],
+  );
 
-  const setField = <K extends keyof DraftRecipe>(key: K, value: DraftRecipe[K]) => {
+  const proteinPerServing = useMemo(() => {
+    const servings = Math.max(1, draft.servings ?? 1);
+    return Math.round((totalProtein / servings) * 10) / 10;
+  }, [totalProtein, draft.servings]);
+
+  const setField = <K extends keyof DraftRecipe>(
+    key: K,
+    value: DraftRecipe[K],
+  ) => {
     setDraft((d) => ({ ...d, [key]: value }));
   };
 
@@ -96,12 +112,11 @@ export function RecipeEditor({
 
   const adjustAmountG = (index: number, delta: number) => {
     const ing = draft.ingredients[index];
-    if (!ing) return;
-    if ((ing.unit ?? "") !== "g") return;
-    const current = Number(ing.amount) || 0;
+    if (!ing || (ing.unit ?? "") !== "g") return;
+    const current = num(Number(ing.amount));
     const next = Math.max(0, current + delta);
-    const baseAmount = Number(ing.amount) || 0;
-    const baseProtein = typeof ing.protein_g === "number" ? ing.protein_g : 0;
+    const baseAmount = num(Number(ing.amount));
+    const baseProtein = num(ing.protein_g);
     const ratio = baseAmount > 0 ? baseProtein / baseAmount : 0;
     const nextProtein =
       baseAmount > 0 ? Math.round(ratio * next * 10) / 10 : baseProtein;
@@ -119,9 +134,9 @@ export function RecipeEditor({
       setIngredient(index, { ...ing, amount: value });
       return;
     }
-    const next = Number(value) || 0;
-    const baseAmount = Number(ing.amount) || 0;
-    const baseProtein = typeof ing.protein_g === "number" ? ing.protein_g : 0;
+    const next = num(Number(value));
+    const baseAmount = num(Number(ing.amount));
+    const baseProtein = num(ing.protein_g);
     const ratio = baseAmount > 0 ? baseProtein / baseAmount : 0;
     const nextProtein =
       baseAmount > 0 ? Math.round(ratio * next * 10) / 10 : baseProtein;
@@ -130,39 +145,6 @@ export function RecipeEditor({
       amount: value,
       protein_g: nextProtein,
     });
-  };
-
-  const translateIngredient = async (index: number) => {
-    const ing = draft.ingredients[index];
-    if (!ing?.name?.trim()) {
-      toast.error("食材名を入れてから翻訳してください");
-      return;
-    }
-    setTranslatingIdx(index);
-    try {
-      const res = await fetch("/api/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ names: [ing.name.trim()] }),
-      });
-      const data = (await res.json()) as {
-        translations?: Record<string, { en?: string; vi?: string }>;
-      };
-      const t = data.translations?.[ing.name.trim()];
-      if (!t) {
-        toast.error("翻訳できませんでした");
-        return;
-      }
-      setIngredient(index, {
-        ...ing,
-        name_en: t.en ?? ing.name_en,
-        name_vi: t.vi ?? ing.name_vi,
-      });
-    } catch {
-      toast.error("翻訳に失敗しました");
-    } finally {
-      setTranslatingIdx(null);
-    }
   };
 
   const setStep = (index: number, step: RecipeStep) => {
@@ -203,17 +185,19 @@ export function RecipeEditor({
 
   const submit = async () => {
     if (!draft.title.trim()) {
-      toast.error("タイトルは必須です");
+      toast.error("料理名は必須です");
       return;
     }
     await onSave({
       ...draft,
       title: draft.title.trim(),
       title_en: draft.title_en?.trim() || null,
-      ingredients: draft.ingredients.map((i) => ({
-        ...i,
-        name: i.name.trim(),
-      })),
+      protein_g_per_serving: proteinPerServing,
+      is_meal_prep_friendly: false,
+      meal_prep_days: null,
+      ingredients: draft.ingredients
+        .map((i) => ({ ...i, name: i.name.trim() }))
+        .filter((i) => i.name),
       steps: draft.steps
         .map((s, i) => ({ ...s, order: i + 1 }))
         .filter((s) => s.text.trim()),
@@ -233,14 +217,6 @@ export function RecipeEditor({
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">英語名(画像検索用)</label>
-            <Input
-              value={draft.title_en ?? ""}
-              onChange={(e) => setField("title_en", e.target.value)}
-              placeholder="例: Ginger Pork"
-            />
-          </div>
-          <div className="space-y-1.5">
             <label className="text-sm font-medium">説明(任意)</label>
             <Textarea
               rows={2}
@@ -248,94 +224,37 @@ export function RecipeEditor({
               onChange={(e) => setField("description", e.target.value)}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">食分</label>
-              <Input
-                type="number"
-                value={String(draft.servings ?? 1)}
-                onChange={(e) =>
-                  setField("servings", Number(e.target.value) || 1)
-                }
-                min={1}
-              />
+
+          {/* 自動計算/AI生成の値（読み取り専用） */}
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            <div className="bg-surface-subtle border border-border rounded-md px-3 py-2">
+              <p className="text-xs text-muted-foreground">食分</p>
+              <p className="text-sm font-semibold">
+                {draft.servings ?? 1}食分
+              </p>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">調理(分)</label>
-              <Input
-                type="number"
-                value={String(draft.prep_time_min ?? "")}
-                onChange={(e) =>
-                  setField(
-                    "prep_time_min",
-                    e.target.value ? Number(e.target.value) : null,
-                  )
-                }
-                min={0}
-              />
+            <div className="bg-surface-subtle border border-border rounded-md px-3 py-2">
+              <p className="text-xs text-muted-foreground">調理時間</p>
+              <p className="text-sm font-semibold">
+                {draft.prep_time_min ?? "-"}分
+              </p>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">
-                タンパク質(g/食)
-              </label>
-              <Input
-                type="number"
-                value={String(draft.protein_g_per_serving ?? "")}
-                onChange={(e) =>
-                  setField(
-                    "protein_g_per_serving",
-                    e.target.value ? Number(e.target.value) : null,
-                  )
-                }
-                min={0}
-              />
+            <div className="bg-primary/5 border border-primary/20 rounded-md px-3 py-2">
+              <p className="text-xs text-muted-foreground">タンパク質/食</p>
+              <p className="text-sm font-semibold text-primary">
+                {proteinPerServing}g
+              </p>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">
-                kcal/食
-              </label>
-              <Input
-                type="number"
-                value={String(draft.calorie_kcal_per_serving ?? "")}
-                onChange={(e) =>
-                  setField(
-                    "calorie_kcal_per_serving",
-                    e.target.value ? Number(e.target.value) : null,
-                  )
-                }
-                min={0}
-              />
+            <div className="bg-surface-subtle border border-border rounded-md px-3 py-2">
+              <p className="text-xs text-muted-foreground">kcal/食</p>
+              <p className="text-sm font-semibold">
+                {draft.calorie_kcal_per_serving ?? "-"}
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={draft.is_meal_prep_friendly}
-                onChange={(e) =>
-                  setField("is_meal_prep_friendly", e.target.checked)
-                }
-              />
-              作り置き向き
-            </label>
-            {draft.is_meal_prep_friendly && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">日数</span>
-                <Input
-                  type="number"
-                  className="w-16"
-                  value={String(draft.meal_prep_days ?? 1)}
-                  onChange={(e) =>
-                    setField(
-                      "meal_prep_days",
-                      Number(e.target.value) || 1,
-                    )
-                  }
-                  min={1}
-                />
-              </div>
-            )}
-          </div>
+          <p className="text-xs text-muted-foreground">
+            タンパク質は食材の合計から自動計算されます。
+          </p>
         </div>
       </Section>
 
@@ -349,6 +268,13 @@ export function RecipeEditor({
           </Button>
         }
       >
+        {pantryItems.length > 0 && (
+          <datalist id={datalistId}>
+            {pantryItems.map((p) => (
+              <option key={p.id} value={p.name} />
+            ))}
+          </datalist>
+        )}
         <div className="space-y-2">
           {draft.ingredients.length === 0 && (
             <p className="text-sm text-muted-foreground">食材がありません</p>
@@ -361,6 +287,7 @@ export function RecipeEditor({
                   <div className="flex items-center gap-2">
                     <Input
                       placeholder="食材名"
+                      list={pantryItems.length > 0 ? datalistId : undefined}
                       value={ing.name}
                       onChange={(e) =>
                         setIngredient(i, { ...ing, name: e.target.value })
@@ -370,39 +297,10 @@ export function RecipeEditor({
                     <Button
                       size="icon"
                       variant="outline"
-                      onClick={() => translateIngredient(i)}
-                      disabled={translatingIdx === i}
-                      title="英語/ベトナム語に自動翻訳"
-                    >
-                      {translatingIdx === i ? (
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Languages className="w-3.5 h-3.5" />
-                      )}
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="outline"
                       onClick={() => removeIngredient(i)}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      placeholder="EN"
-                      value={ing.name_en ?? ""}
-                      onChange={(e) =>
-                        setIngredient(i, { ...ing, name_en: e.target.value })
-                      }
-                    />
-                    <Input
-                      placeholder="VI"
-                      value={ing.name_vi ?? ""}
-                      onChange={(e) =>
-                        setIngredient(i, { ...ing, name_vi: e.target.value })
-                      }
-                    />
                   </div>
                   <div className="grid grid-cols-12 gap-2 items-center">
                     <div className="col-span-5 flex items-center gap-1">

@@ -4,11 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Clock,
   Plus,
   UtensilsCrossed,
   CheckCircle2,
   CalendarPlus,
+  Copy,
+  Trash2,
 } from "lucide-react";
 import {
   Button,
@@ -64,10 +65,14 @@ function RecipeCard({
   recipe,
   onToggleTried,
   onLog,
+  onDelete,
+  onDuplicate,
 }: {
   recipe: Recipe;
   onToggleTried: (id: string, tried: boolean) => void;
   onLog: (recipe: Recipe) => void;
+  onDelete: (recipe: Recipe) => void;
+  onDuplicate: (recipe: Recipe) => void;
 }) {
   return (
     <div className="relative">
@@ -84,43 +89,43 @@ function RecipeCard({
               {recipe.protein_g_per_serving && (
                 <Badge>P {recipe.protein_g_per_serving}g</Badge>
               )}
-              {recipe.prep_time_min && (
-                <Badge variant="secondary">
-                  <Clock className="w-2.5 h-2.5 mr-1" />
-                  {recipe.prep_time_min}分
-                </Badge>
-              )}
-              {recipe.is_meal_prep_friendly && (
-                <Badge
-                  variant="outline"
-                  className="bg-warning-subtle text-warning border-transparent"
-                >
-                  作り置き
-                </Badge>
-              )}
-              {recipe.source_tag === "self" && (
-                <Badge variant="outline" className="text-xs">
-                  自分で登録
-                </Badge>
-              )}
-              {recipe.source_tag === "ai_suggest" && (
-                <Badge variant="outline" className="text-xs">
-                  AI提案
-                </Badge>
-              )}
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1"
-              onClick={(e) => {
-                e.preventDefault();
-                onLog(recipe);
-              }}
-            >
-              <CalendarPlus className="w-3.5 h-3.5" />
-              今日記録する
-            </Button>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 gap-1 text-xs"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onLog(recipe);
+                }}
+              >
+                <CalendarPlus className="w-3.5 h-3.5" />
+                記録
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onDuplicate(recipe);
+                }}
+                title="複製"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onDelete(recipe);
+                }}
+                title="削除"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </Link>
@@ -163,6 +168,35 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
   const tried = filtered.filter((r) => r.is_tried);
   const untried = filtered.filter((r) => !r.is_tried);
 
+  const deleteRecipe = async (recipe: Recipe) => {
+    if (!confirm(`「${recipe.title}」を削除しますか?`)) return;
+    try {
+      const res = await fetch(`/api/recipes/${recipe.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setRecipes((prev) => prev.filter((r) => r.id !== recipe.id));
+      toast.success("削除しました");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "削除に失敗しました");
+    }
+  };
+
+  const duplicateRecipe = async (recipe: Recipe) => {
+    try {
+      const res = await fetch(`/api/recipes/${recipe.id}/duplicate`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      toast.success(`「${recipe.title}（コピー）」を作成しました`);
+      router.push(`/recipes/${data.recipe_id}/edit`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "複製に失敗しました");
+    }
+  };
+
   const toggleTried = async (id: string, isTried: boolean) => {
     const { error } = await db.recipes.update(supabase, id, {
       is_tried: isTried,
@@ -196,6 +230,8 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
             recipe={recipe}
             onToggleTried={toggleTried}
             onLog={setLogTarget}
+            onDelete={deleteRecipe}
+            onDuplicate={duplicateRecipe}
           />
         ))}
       </div>

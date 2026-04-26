@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { db } from "@/lib/db";
 import { NewRecipeClient } from "./new-client";
 
 export default async function NewRecipePage() {
@@ -8,5 +9,6 @@ export default async function NewRecipePage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
-  return <NewRecipeClient />;
+  const pantryItems = await db.pantry.getAll(supabase, user.id);
+  return <NewRecipeClient pantryItems={pantryItems} />;
 }

@@ -9,17 +9,13 @@ export const SCHEMA_SAMPLE = `{
   "title": "豚の生姜焼き",
   "title_en": "Ginger Pork",
   "description": "1〜2文の説明",
-  "protein_g_per_serving": 38,
-  "calorie_kcal_per_serving": 520,
-  "prep_time_min": 25,
-  "is_meal_prep_friendly": true,
-  "meal_prep_days": 2,
-  "servings": 2,
+  "protein_g_per_serving": 31,
+  "calorie_kcal_per_serving": 480,
+  "prep_time_min": 20,
+  "servings": 1,
   "ingredients": [
     {
       "name": "豚ロース",
-      "name_en": "Pork loin",
-      "name_vi": "Thịt heo thăn",
       "amount": "150",
       "unit": "g",
       "protein_g": 31,
@@ -27,8 +23,6 @@ export const SCHEMA_SAMPLE = `{
     },
     {
       "name": "醤油",
-      "name_en": "Soy sauce",
-      "name_vi": "Nước tương",
       "amount": "大さじ2",
       "unit": "",
       "protein_g": 0,
@@ -36,17 +30,21 @@ export const SCHEMA_SAMPLE = `{
     }
   ],
   "steps": [
-    { "order": 1, "text": "豚肉を一口大に切る", "image_query": "slicing pork loin" }
+    { "order": 1, "text": "豚肉を一口大に切る", "image_query": "slicing pork loin" },
+    { "order": 2, "text": "フライパンで両面焼く", "image_query": "pan frying pork" }
   ]
 }`;
 
 export const FIXED_CONSTRAINTS = `【固定条件（最優先・必ず守る）】
+- 1食分（servings = 1）として出力
 - 高タンパク（1食あたり30g以上、可能なら40g以上）
 - ホーチミン市内のスーパーで手に入る食材を使用
 - 調理時間は60分以内
-- 食材は具体的に（例：「肉」ではなく「豚バラ肉」「鶏胸肉」など）
-- ingredients[*].protein_g は その amount での絶対値（例: 豚ロース150gで31g）。後で量を変更したとき protein_g/amount の比率で再計算するため、必ず妥当な値を入れる
-- ingredients[*].unit は数値量のときは "g" / "ml" など。それ以外（"大さじ2" 等のように amount に単位含む）は空文字 ""`;
+- 食材は具体的に種目まで（例：「肉」ではなく「豚バラ肉」「鶏もも肉」など）
+- ingredients[*].protein_g は その amount に対する絶対値（例: 豚ロース150g なら 31）。後で量を変更したとき比率で再計算するため、必ず妥当な値を入れる
+- ingredients[*].unit は数値量のときは "g" / "ml" など。"大さじ2" のように amount に単位が含まれる場合は空文字 ""
+- name_en / name_vi はサーバー側で後から自動付与するため出力不要（出力しても無視される）
+- steps[*].image_query は 各調理過程の写真検索用に英語で具体的に書く（必須・各ステップ毎に）`;
 
 export interface RawDraft {
   title?: unknown;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { DB_SCHEMA } from "@/lib/constants";
 import { fetchUnsplashImage } from "@/lib/unsplash";
+import { translateNames, translateTitle } from "@/lib/translate";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   DraftRecipe,
@@ -10,34 +11,69 @@ import type {
 } from "@/types/api";
 import type { RecipeIngredient, RecipeSourceTag } from "@/types/database";
 
-function buildPayload(
-  draft: DraftRecipe,
-  imageUrl: string | null,
+async function enrichIngredients(
+  ingredients: RecipeIngredient[],
   pantryNames: Set<string>,
-  source_tag: RecipeSourceTag,
-) {
-  const ingredients: RecipeIngredient[] = (draft.ingredients ?? []).map(
-    (ing) => ({
+): Promise<RecipeIngredient[]> {
+  const needsTranslate = Array.from(
+    new Set(
+      ingredients
+        .filter((i) => i.name && (!i.name_en || !i.name_vi))
+        .map((i) => i.name),
+    ),
+  );
+  let translations: Record<string, { en?: string; vi?: string }> = {};
+  if (needsTranslate.length > 0) {
+    translations = await translateNames(needsTranslate);
+  }
+  return ingredients.map((ing) => {
+    const t = translations[ing.name];
+    return {
       name: ing.name,
-      name_en: ing.name_en ?? null,
-      name_vi: ing.name_vi ?? null,
+      name_en: ing.name_en ?? t?.en ?? null,
+      name_vi: ing.name_vi ?? t?.vi ?? null,
       amount: ing.amount ?? "",
       unit: ing.unit ?? "",
       protein_g: typeof ing.protein_g === "number" ? ing.protein_g : null,
       in_pantry: pantryNames.has((ing.name ?? "").toLowerCase()),
       category: ing.category ?? null,
-    }),
+    };
+  });
+}
+
+function calculatedProteinPerServing(
+  ingredients: RecipeIngredient[],
+  servings: number,
+): number {
+  const total = ingredients.reduce(
+    (s, i) => s + (typeof i.protein_g === "number" ? i.protein_g : 0),
+    0,
   );
+  if (servings <= 0) return Math.round(total * 10) / 10;
+  return Math.round((total / servings) * 10) / 10;
+}
+
+async function buildPayload(
+  draft: DraftRecipe,
+  imageUrl: string | null,
+  pantryNames: Set<string>,
+  source_tag: RecipeSourceTag,
+) {
+  const ingredients = await enrichIngredients(
+    draft.ingredients ?? [],
+    pantryNames,
+  );
+  const servings = draft.servings ?? 1;
   return {
     title: draft.title,
     title_en: draft.title_en ?? null,
     description: draft.description ?? null,
-    protein_g_per_serving: draft.protein_g_per_serving,
+    protein_g_per_serving: calculatedProteinPerServing(ingredients, servings),
     calorie_kcal_per_serving: draft.calorie_kcal_per_serving,
     prep_time_min: draft.prep_time_min,
-    is_meal_prep_friendly: draft.is_meal_prep_friendly ?? false,
-    meal_prep_days: draft.meal_prep_days ?? 1,
-    servings: draft.servings ?? 1,
+    is_meal_prep_friendly: false,
+    meal_prep_days: null,
+    servings,
     ingredients,
     steps: draft.steps ?? [],
     ai_generated: source_tag === "ai_suggest",
@@ -58,6 +94,12 @@ async function getPantryNames(
     .eq("user_id", userId)
     .eq("in_stock", true);
   return new Set((data ?? []).map((p) => p.name.toLowerCase()));
+}
+
+async function ensureTitleEn(draft: DraftRecipe): Promise<string | null> {
+  if (draft.title_en?.trim()) return draft.title_en.trim();
+  if (!draft.title?.trim()) return null;
+  return await translateTitle(draft.title.trim());
 }
 
 export async function POST(request: Request) {
@@ -81,11 +123,16 @@ export async function POST(request: Request) {
       body.source_tag === "ai_suggest" ? "ai_suggest" : "self";
 
     const pantryNames = await getPantryNames(supabase, user.id);
-    const imageUrl = draft.title_en
-      ? await fetchUnsplashImage(draft.title_en)
-      : null;
+    const titleEn = await ensureTitleEn(draft);
+    const enrichedDraft: DraftRecipe = { ...draft, title_en: titleEn };
+    const imageUrl = titleEn ? await fetchUnsplashImage(titleEn) : null;
 
-    const payload = buildPayload(draft, imageUrl, pantryNames, source_tag);
+    const payload = await buildPayload(
+      enrichedDraft,
+      imageUrl,
+      pantryNames,
+      source_tag,
+    );
 
     const { data, error } = await supabase
       .schema(DB_SCHEMA)
@@ -141,7 +188,7 @@ export async function PUT(request: Request) {
     const { data: existing } = await supabase
       .schema(DB_SCHEMA)
       .from("recipes")
-      .select("title_en, image_url, source_tag")
+      .select("title, title_en, image_url, source_tag")
       .eq("id", id)
       .eq("user_id", user.id)
       .single();
@@ -149,19 +196,26 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const pantryNames = await getPantryNames(supabase, user.id);
+    const titleEn = await ensureTitleEn(draft);
+    const enrichedDraft: DraftRecipe = { ...draft, title_en: titleEn };
 
     let imageUrl = existing.image_url as string | null;
-    if (
-      draft.title_en &&
-      draft.title_en !== existing.title_en
-    ) {
-      imageUrl = await fetchUnsplashImage(draft.title_en);
+    const titleChanged = draft.title.trim() !== (existing.title as string);
+    const titleEnChanged = titleEn !== (existing.title_en as string | null);
+    if ((titleChanged || titleEnChanged) && titleEn) {
+      const newImg = await fetchUnsplashImage(titleEn);
+      if (newImg) imageUrl = newImg;
     }
 
     const source_tag: RecipeSourceTag =
       (existing.source_tag as RecipeSourceTag | null) ?? "self";
 
-    const payload = buildPayload(draft, imageUrl, pantryNames, source_tag);
+    const payload = await buildPayload(
+      enrichedDraft,
+      imageUrl,
+      pantryNames,
+      source_tag,
+    );
 
     const { error } = await supabase
       .schema(DB_SCHEMA)

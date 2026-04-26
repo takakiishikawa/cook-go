@@ -103,8 +103,13 @@ export function PlanClient({
   const weekEnd = addDays(weekStart, 6);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  const planMap = new Map<string, MealPlanWithRecipe>();
-  plans.forEach((p) => planMap.set(`${p.planned_date}:${p.meal_type}`, p));
+  const plansByCell = new Map<string, MealPlanWithRecipe[]>();
+  plans.forEach((p) => {
+    const key = `${p.planned_date}:${p.meal_type}`;
+    const arr = plansByCell.get(key) ?? [];
+    arr.push(p);
+    plansByCell.set(key, arr);
+  });
 
   const fetchWeek = useCallback(async (start: string) => {
     setLoading(true);
@@ -190,9 +195,9 @@ export function PlanClient({
     );
   };
 
-  const existingPlan = selectedCell
-    ? planMap.get(`${selectedCell.date}:${selectedCell.mealType}`)
-    : null;
+  const existingPlans = selectedCell
+    ? (plansByCell.get(`${selectedCell.date}:${selectedCell.mealType}`) ?? [])
+    : [];
 
   return (
     <div className="flex flex-col">
@@ -248,55 +253,57 @@ export function PlanClient({
                     {MEAL_TYPE_LABELS[mealType]}
                   </td>
                   {weekDays.map((date) => {
-                    const plan = planMap.get(`${date}:${mealType}`);
+                    const cellPlans =
+                      plansByCell.get(`${date}:${mealType}`) ?? [];
                     return (
                       <td key={date} className="p-1 align-top">
-                        {plan ? (
-                          <div className="relative group">
-                            <Card
-                              className="overflow-hidden cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all"
-                              onClick={() => openCell(date, mealType)}
-                            >
-                              <RecipeImage
-                                url={plan.recipe.image_url}
-                                title={
-                                  plan.recipe.title_en ?? plan.recipe.title
-                                }
-                              />
-                              <CardContent className="p-1.5">
-                                <p className="text-xs font-medium line-clamp-1 leading-tight">
-                                  {plan.recipe.title}
-                                </p>
-                                {plan.recipe.protein_g_per_serving && (
-                                  <p className="text-xs text-primary font-semibold mt-0.5">
-                                    P{" "}
-                                    {Math.round(
-                                      plan.recipe.protein_g_per_serving *
-                                        plan.servings,
-                                    )}
-                                    g
+                        <div className="space-y-1">
+                          {cellPlans.map((plan) => (
+                            <div key={plan.id} className="relative group">
+                              <Card className="overflow-hidden">
+                                <RecipeImage
+                                  url={plan.recipe.image_url}
+                                  title={
+                                    plan.recipe.title_en ?? plan.recipe.title
+                                  }
+                                />
+                                <CardContent className="p-1.5">
+                                  <p className="text-xs font-medium line-clamp-1 leading-tight">
+                                    {plan.recipe.title}
                                   </p>
-                                )}
-                              </CardContent>
-                            </Card>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deletePlan(plan.id);
-                              }}
-                              className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-destructive text-white rounded-full p-0.5 transition-opacity"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ) : (
+                                  {plan.recipe.protein_g_per_serving && (
+                                    <p className="text-xs text-primary font-semibold mt-0.5">
+                                      P{" "}
+                                      {Math.round(
+                                        plan.recipe.protein_g_per_serving *
+                                          plan.servings,
+                                      )}
+                                      g
+                                    </p>
+                                  )}
+                                </CardContent>
+                              </Card>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deletePlan(plan.id);
+                                }}
+                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-destructive text-white rounded-full p-0.5 transition-opacity"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
                           <button
                             onClick={() => openCell(date, mealType)}
-                            className="w-full h-20 rounded-md border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 flex items-center justify-center transition-colors"
+                            className={`w-full rounded-md border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 flex items-center justify-center transition-colors ${
+                              cellPlans.length === 0 ? "h-20" : "h-8"
+                            }`}
+                            title="レシピを追加"
                           >
                             <Plus className="w-4 h-4 text-muted-foreground" />
                           </button>
-                        )}
+                        </div>
                       </td>
                     );
                   })}
@@ -310,9 +317,9 @@ export function PlanClient({
         {plans.length > 0 && (
           <div className="flex gap-2 flex-wrap">
             {weekDays.map((date) => {
-              const dayPlans = MEAL_TYPES.map((t) =>
-                planMap.get(`${date}:${t}`),
-              ).filter(Boolean) as MealPlanWithRecipe[];
+              const dayPlans = MEAL_TYPES.flatMap(
+                (t) => plansByCell.get(`${date}:${t}`) ?? [],
+              );
               const totalProtein = dayPlans.reduce(
                 (s, p) =>
                   s + (p.recipe.protein_g_per_serving ?? 0) * p.servings,
@@ -349,9 +356,10 @@ export function PlanClient({
           </DialogHeader>
 
           <div className="space-y-4">
-            {existingPlan && (
-              <div className="text-xs text-muted-foreground bg-surface-subtle rounded-md px-3 py-2">
-                現在: {existingPlan.recipe.title}
+            {existingPlans.length > 0 && (
+              <div className="text-xs text-muted-foreground bg-surface-subtle rounded-md px-3 py-2 space-y-0.5">
+                現在:{" "}
+                {existingPlans.map((p) => p.recipe.title).join(", ")}
               </div>
             )}
 

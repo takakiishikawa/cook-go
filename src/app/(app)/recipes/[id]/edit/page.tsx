@@ -15,8 +15,11 @@ export default async function EditRecipePage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  const recipe = await db.recipes.getById(supabase, user.id, id);
+  const [recipe, pantryItems] = await Promise.all([
+    db.recipes.getById(supabase, user.id, id),
+    db.pantry.getAll(supabase, user.id),
+  ]);
   if (!recipe) redirect("/recipes");
 
-  return <EditRecipeClient recipe={recipe} />;
+  return <EditRecipeClient recipe={recipe} pantryItems={pantryItems} />;
 }

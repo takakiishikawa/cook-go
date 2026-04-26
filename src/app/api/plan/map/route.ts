@@ -102,7 +102,7 @@ export async function POST(request: Request) {
     const { error } = await supabase
       .schema(DB_SCHEMA)
       .from("meal_plans")
-      .upsert(inserts, { onConflict: "user_id,planned_date,meal_type" });
+      .insert(inserts);
 
     if (error) throw error;
 

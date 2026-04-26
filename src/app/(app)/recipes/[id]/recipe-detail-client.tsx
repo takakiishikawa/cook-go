@@ -15,6 +15,8 @@ import {
   Beef,
   CalendarPlus,
   Pencil,
+  Copy,
+  Trash2,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import {
@@ -113,6 +115,36 @@ export function RecipeDetailClient({
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [logOpen, setLogOpen] = useState(false);
 
+  const deleteRecipe = async () => {
+    if (!confirm(`「${recipe.title}」を削除しますか?`)) return;
+    try {
+      const res = await fetch(`/api/recipes/${recipe.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      toast.success("削除しました");
+      router.push("/recipes");
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "削除に失敗しました");
+    }
+  };
+
+  const duplicateRecipe = async () => {
+    try {
+      const res = await fetch(`/api/recipes/${recipe.id}/duplicate`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      toast.success("複製しました");
+      router.push(`/recipes/${data.recipe_id}/edit`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "複製に失敗しました");
+    }
+  };
+
   const pantryNames = new Set(
     pantryItems.filter((p) => p.in_stock).map((p) => p.name.toLowerCase()),
   );
@@ -172,7 +204,7 @@ export function RecipeDetailClient({
           title={recipe.title}
           description={recipe.description ?? undefined}
           actions={
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
                 variant="outline"
@@ -183,6 +215,24 @@ export function RecipeDetailClient({
                   <Pencil className="w-3.5 h-3.5" />
                   編集
                 </Link>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={duplicateRecipe}
+              >
+                <Copy className="w-3.5 h-3.5" />
+                複製
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={deleteRecipe}
+              >
+                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                削除
               </Button>
               <Button
                 size="sm"
@@ -243,15 +293,6 @@ export function RecipeDetailClient({
             </div>
           )}
         </div>
-
-        {recipe.is_meal_prep_friendly && (
-          <Badge
-            variant="outline"
-            className="bg-warning-subtle text-warning border-transparent"
-          >
-            作り置き向き
-          </Badge>
-        )}
 
         {/* Ingredients */}
         <Section

@@ -20,11 +20,16 @@ import {
 import { AppHeader } from "@/components/layout/app-header";
 import { RecipeEditor } from "@/components/recipe-editor";
 import type { DraftRecipe } from "@/types/api";
+import type { PantryItem } from "@/types/database";
 
 type Mode = "name" | "ai";
 type Step = "input" | "candidates" | "edit";
 
-export function NewRecipeClient() {
+export function NewRecipeClient({
+  pantryItems,
+}: {
+  pantryItems: PantryItem[];
+}) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("name");
   const [step, setStep] = useState<Step>("input");
@@ -320,6 +325,7 @@ export function NewRecipeClient() {
         {step === "edit" && draft && (
           <RecipeEditor
             initial={draft}
+            pantryItems={pantryItems}
             saving={saving}
             saveLabel="登録"
             onSave={saveSingleDraft}
