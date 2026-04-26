@@ -85,9 +85,11 @@ export function RecipePickerDialog({
                 <Card className="hover:border-primary/40 transition-colors">
                   <CardContent className="py-2 flex items-center gap-2">
                     {r.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={r.image_url}
                         alt=""
+                        loading="lazy"
                         className="w-10 h-10 rounded object-cover shrink-0"
                       />
                     ) : (
