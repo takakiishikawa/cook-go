@@ -39,10 +39,7 @@ function PantryItemImage({
       <div
         className={`${dim} rounded-md bg-surface-subtle flex items-center justify-center flex-shrink-0`}
       >
-        <ImageOff
-          className="w-4 h-4 text-muted-foreground"
-          strokeWidth={1.5}
-        />
+        <ImageOff className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
       </div>
     );
   }
@@ -109,9 +106,7 @@ export function PantryClient({
     if (error) {
       toast.error("更新に失敗しました");
       setItems((prev) =>
-        prev.map((i) =>
-          i.id === item.id ? { ...i, in_stock: !next } : i,
-        ),
+        prev.map((i) => (i.id === item.id ? { ...i, in_stock: !next } : i)),
       );
     }
   };

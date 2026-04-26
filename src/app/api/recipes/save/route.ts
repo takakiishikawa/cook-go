@@ -22,10 +22,7 @@ async function enrichIngredients(
         .filter(
           (i) =>
             i.name &&
-            (!i.name_en ||
-              !i.name_vi ||
-              !i.category ||
-              i.category === "other"),
+            (!i.name_en || !i.name_vi || !i.category || i.category === "other"),
         )
         .map((i) => i.name),
     ),
@@ -36,7 +33,8 @@ async function enrichIngredients(
       : {};
   return ingredients.map((ing) => {
     const t = translations[ing.name];
-    const inferredCategory = t?.category && t.category !== "other" ? t.category : null;
+    const inferredCategory =
+      t?.category && t.category !== "other" ? t.category : null;
     return {
       name: ing.name,
       name_en: ing.name_en ?? t?.en ?? null,
