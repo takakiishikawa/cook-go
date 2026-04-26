@@ -93,7 +93,9 @@ export function CookGoSidebar() {
       supabase.auth.getUser().then(({ data: { user } }) => {
         if (!user) return;
         setDisplayName(
-          user.user_metadata?.display_name || user.email?.split("@")[0] || "User",
+          user.user_metadata?.display_name ||
+            user.email?.split("@")[0] ||
+            "User",
         );
         setEmail(user.email || "");
         setAvatarUrl(user.user_metadata?.avatar_url || "");
