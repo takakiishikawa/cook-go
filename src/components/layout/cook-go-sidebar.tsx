@@ -36,7 +36,6 @@ import {
   DropdownMenuTrigger,
   UserMenu,
 } from "@takaki/go-design-system";
-import { createClient } from "@/lib/supabase/client";
 
 const GO_APPS = [
   {
@@ -89,14 +88,16 @@ export function CookGoSidebar() {
   const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      setDisplayName(
-        user.user_metadata?.display_name || user.email?.split("@")[0] || "User",
-      );
-      setEmail(user.email || "");
-      setAvatarUrl(user.user_metadata?.avatar_url || "");
+    import("@/lib/supabase/client").then(({ createClient }) => {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) return;
+        setDisplayName(
+          user.user_metadata?.display_name || user.email?.split("@")[0] || "User",
+        );
+        setEmail(user.email || "");
+        setAvatarUrl(user.user_metadata?.avatar_url || "");
+      });
     });
     const update = () =>
       setIsDark(document.documentElement.classList.contains("dark"));
@@ -116,6 +117,7 @@ export function CookGoSidebar() {
   }
 
   async function handleSignOut() {
+    const { createClient } = await import("@/lib/supabase/client");
     const supabase = createClient();
     await supabase.auth.signOut();
     window.location.href = "/";
