@@ -119,11 +119,35 @@ export function ShoppingClient({
   };
 
   const addItem = async () => {
-    if (!newItemName.trim()) return;
+    const name = newItemName.trim();
+    if (!name) return;
     setAdding(true);
+
+    let name_en: string | null = null;
+    let name_vi: string | null = null;
+    try {
+      const t = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ names: [name] }),
+      });
+      const tData = (await t.json()) as {
+        translations?: Record<string, { en?: string; vi?: string }>;
+      };
+      const entry = tData.translations?.[name];
+      if (entry) {
+        name_en = entry.en ?? null;
+        name_vi = entry.vi ?? null;
+      }
+    } catch {
+      // 翻訳失敗時は日本語のみで保存
+    }
+
     const { error, data } = await db.shopping.insert(supabase, {
       user_id: userId,
-      name: newItemName.trim(),
+      name,
+      name_en,
+      name_vi,
       checked: false,
     });
     setAdding(false);

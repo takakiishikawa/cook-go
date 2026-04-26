@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ShoppingCart,
@@ -12,6 +13,8 @@ import {
   Users,
   Flame,
   Beef,
+  CalendarPlus,
+  Pencil,
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import {
@@ -27,6 +30,7 @@ import {
 import { Recipe, RecipeIngredient, RecipeStep } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { useFoodImage } from "@/hooks/use-food-image";
+import { LogMealDialog } from "@/components/log-meal-dialog";
 
 interface RecipeDetailClientProps {
   recipe: Recipe;
@@ -74,6 +78,32 @@ function StepImage({ query }: { query: string | null }) {
   );
 }
 
+function IngredientThumb({ ing }: { ing: RecipeIngredient }) {
+  const { imageUrl, loading } = useFoodImage(ing.name_en ?? ing.name);
+  if (loading) {
+    return <Skeleton className="w-12 h-12 rounded-md flex-shrink-0" />;
+  }
+  if (!imageUrl) {
+    return (
+      <div className="w-12 h-12 rounded-md bg-surface-subtle flex items-center justify-center flex-shrink-0">
+        <UtensilsCrossed
+          className="w-4 h-4 text-muted-foreground"
+          strokeWidth={1.5}
+        />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={imageUrl}
+      alt={ing.name}
+      className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+      loading="lazy"
+      decoding="async"
+    />
+  );
+}
+
 export function RecipeDetailClient({
   recipe,
   pantryItems,
@@ -81,6 +111,7 @@ export function RecipeDetailClient({
   const router = useRouter();
   const [generating, setGenerating] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [logOpen, setLogOpen] = useState(false);
 
   const pantryNames = new Set(
     pantryItems.filter((p) => p.in_stock).map((p) => p.name.toLowerCase()),
@@ -136,10 +167,33 @@ export function RecipeDetailClient({
         <RecipeHeroImage recipe={recipe} />
       </div>
 
-      <div className="px-4 md:px-8 pt-5 pb-8 space-y-6 max-w-3xl">
+      <div className="px-4 md:px-8 pt-5 pb-8 space-y-6 max-w-4xl">
         <PageHeader
           title={recipe.title}
           description={recipe.description ?? undefined}
+          actions={
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                asChild
+              >
+                <Link href={`/recipes/${recipe.id}/edit`}>
+                  <Pencil className="w-3.5 h-3.5" />
+                  編集
+                </Link>
+              </Button>
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setLogOpen(true)}
+              >
+                <CalendarPlus className="w-3.5 h-3.5" />
+                今日記録する
+              </Button>
+            </div>
+          }
         />
 
         {/* Stats row */}
@@ -206,39 +260,51 @@ export function RecipeDetailClient({
         >
           {ingredients.length > 0 ? (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 {ingredients.map((ing, i) => {
                   const inPantry = pantryNames.has(ing.name.toLowerCase());
+                  const amountText = ing.unit
+                    ? `${ing.amount}${ing.unit}`
+                    : ing.amount;
                   return (
                     <div
                       key={i}
                       className={cn(
-                        "flex items-start justify-between px-3 py-2.5 rounded-md border",
+                        "flex items-center gap-3 px-3 py-2 rounded-md border",
                         inPantry
                           ? "bg-primary/5 border-primary/20"
                           : "bg-muted border-border",
                       )}
                     >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        {inPantry ? (
-                          <Check className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
-                        ) : (
-                          <X className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <IngredientThumb ing={ing} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          {inPantry ? (
+                            <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          ) : (
+                            <X className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                          )}
+                          <p className="text-sm font-medium truncate">
+                            {ing.name}
+                          </p>
+                        </div>
+                        {(ing.name_en || ing.name_vi) && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {[ing.name_en, ing.name_vi]
+                              .filter(Boolean)
+                              .join(" / ")}
+                          </p>
                         )}
-                        <div className="min-w-0">
-                          <p className="text-sm truncate">{ing.name}</p>
-                          {(ing.name_en || ing.name_vi) && (
-                            <p className="text-xs text-muted-foreground truncate">
-                              {[ing.name_en, ing.name_vi]
-                                .filter(Boolean)
-                                .join(" / ")}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm">{amountText}</p>
+                        {typeof ing.protein_g === "number" &&
+                          ing.protein_g > 0 && (
+                            <p className="text-xs text-primary">
+                              P{ing.protein_g}g
                             </p>
                           )}
-                        </div>
                       </div>
-                      <span className="text-xs text-muted-foreground flex-shrink-0 ml-1 mt-0.5">
-                        {ing.amount}
-                      </span>
                     </div>
                   );
                 })}
@@ -320,6 +386,15 @@ export function RecipeDetailClient({
           </Section>
         )}
       </div>
+
+      <LogMealDialog
+        recipe={logOpen ? recipe : null}
+        onClose={() => setLogOpen(false)}
+        onLogged={() => {
+          setLogOpen(false);
+          toast.success("食事を記録しました");
+        }}
+      />
     </div>
   );
 }

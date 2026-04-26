@@ -57,7 +57,12 @@ export async function POST(request: Request) {
         itemsToShop.map((ing) => ({
           user_id: user.id,
           recipe_id,
-          name: `${ing.name} ${ing.amount}`,
+          name: ing.name,
+          name_en: ing.name_en ?? null,
+          name_vi: ing.name_vi ?? null,
+          amount: ing.unit
+            ? `${ing.amount}${ing.unit}`
+            : (ing.amount ?? null),
           checked: false,
         })),
       )
