@@ -90,8 +90,7 @@ export async function POST(request: Request) {
             amount: ing.amount ?? "",
             unit: ing.unit ?? "",
             protein_g: typeof ing.protein_g === "number" ? ing.protein_g : null,
-            kcal_kcal:
-              typeof ing.kcal_kcal === "number" ? ing.kcal_kcal : null,
+            kcal_kcal: typeof ing.kcal_kcal === "number" ? ing.kcal_kcal : null,
             in_pantry: pantryNames.has((ing.name ?? "").toLowerCase()),
             category: ing.category ?? null,
           };

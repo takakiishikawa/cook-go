@@ -126,7 +126,7 @@ export function SettingsClient({ userId, settings }: SettingsClientProps) {
               {computedTarget != null && (
                 <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-md px-3 py-2">
                   <span className="text-sm">
-                    {weightNum} × {multiplier} = {" "}
+                    {weightNum} × {multiplier} ={" "}
                     <span className="font-semibold text-primary">
                       {computedTarget}g/日
                     </span>

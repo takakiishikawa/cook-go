@@ -243,9 +243,7 @@ export function RecipeEditor({
             </div>
             <div className="bg-surface-subtle border border-border rounded-md px-3 py-2">
               <p className="text-xs text-muted-foreground">kcal</p>
-              <p className="text-sm font-semibold">
-                {Math.round(totalKcal)}
-              </p>
+              <p className="text-sm font-semibold">{Math.round(totalKcal)}</p>
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
