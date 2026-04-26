@@ -1,0 +1,85 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import { Button, PageHeader, toast } from "@takaki/go-design-system";
+import { AppHeader } from "@/components/layout/app-header";
+import { RecipeEditor } from "@/components/recipe-editor";
+import type { Recipe } from "@/types/database";
+import type { DraftRecipe } from "@/types/api";
+
+function recipeToDraft(r: Recipe): DraftRecipe {
+  return {
+    title: r.title,
+    title_en: r.title_en,
+    description: r.description,
+    protein_g_per_serving: r.protein_g_per_serving,
+    calorie_kcal_per_serving: r.calorie_kcal_per_serving,
+    prep_time_min: r.prep_time_min,
+    is_meal_prep_friendly: r.is_meal_prep_friendly,
+    meal_prep_days: r.meal_prep_days,
+    servings: r.servings,
+    ingredients: (r.ingredients ?? []).map((ing) => ({
+      ...ing,
+      unit: ing.unit ?? "",
+      protein_g: typeof ing.protein_g === "number" ? ing.protein_g : null,
+      in_pantry: ing.in_pantry ?? false,
+    })),
+    steps: (r.steps ?? []).map((s, i) => ({ ...s, order: s.order ?? i + 1 })),
+  };
+}
+
+export function EditRecipeClient({ recipe }: { recipe: Recipe }) {
+  const router = useRouter();
+  const [saving, setSaving] = useState(false);
+
+  const save = async (draft: DraftRecipe) => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/recipes/save?id=${recipe.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipe: draft,
+          source_tag: recipe.source_tag ?? "self",
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      toast.success("更新しました");
+      router.push(`/recipes/${recipe.id}`);
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "更新に失敗しました");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col">
+      <AppHeader />
+      <div className="px-4 md:px-8 pt-5 pb-24 space-y-5 max-w-3xl">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push(`/recipes/${recipe.id}`)}
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <PageHeader title="レシピ編集" description={recipe.title} />
+        </div>
+        <RecipeEditor
+          initial={recipeToDraft(recipe)}
+          saving={saving}
+          saveLabel="更新"
+          onSave={save}
+          onCancel={() => router.push(`/recipes/${recipe.id}`)}
+          cancelLabel="戻る"
+        />
+      </div>
+    </div>
+  );
+}

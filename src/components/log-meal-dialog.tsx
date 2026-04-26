@@ -1,0 +1,319 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Minus, Plus, RefreshCw } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  Button,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Card,
+  CardContent,
+  toast,
+} from "@takaki/go-design-system";
+import {
+  MEAL_TYPES,
+  MEAL_TYPE_LABELS,
+  type MealType,
+  type Recipe,
+  type FoodLogIngredientOverride,
+} from "@/types/database";
+
+function todayStr(): string {
+  const d = new Date();
+  return d.toISOString().split("T")[0];
+}
+
+interface LogMealDialogProps {
+  recipe: Recipe | null;
+  defaultMealType?: MealType;
+  defaultDate?: string;
+  onClose: () => void;
+  onLogged?: () => void;
+}
+
+export function LogMealDialog({
+  recipe,
+  defaultMealType = "dinner",
+  defaultDate,
+  onClose,
+  onLogged,
+}: LogMealDialogProps) {
+  const [mealType, setMealType] = useState<MealType>(defaultMealType);
+  const [date, setDate] = useState<string>(defaultDate ?? todayStr());
+  const [servings, setServings] = useState<number>(1);
+  const [showDetails, setShowDetails] = useState(false);
+  const [amounts, setAmounts] = useState<Record<number, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!recipe) return;
+    setMealType(defaultMealType);
+    setDate(defaultDate ?? todayStr());
+    setServings(1);
+    setShowDetails(false);
+    const initial: Record<number, string> = {};
+    (recipe.ingredients ?? []).forEach((ing, i) => {
+      initial[i] = ing.amount ?? "";
+    });
+    setAmounts(initial);
+  }, [recipe, defaultMealType, defaultDate]);
+
+  const overrides = useMemo<FoodLogIngredientOverride[]>(() => {
+    if (!recipe?.ingredients) return [];
+    const list: FoodLogIngredientOverride[] = [];
+    recipe.ingredients.forEach((ing, i) => {
+      if ((ing.unit ?? "") !== "g") return;
+      const baseAmount = Number(ing.amount) || 0;
+      const next = Number(amounts[i]) || 0;
+      if (next === baseAmount) return;
+      const baseProtein = typeof ing.protein_g === "number" ? ing.protein_g : 0;
+      const ratio = baseAmount > 0 ? baseProtein / baseAmount : 0;
+      const newProtein =
+        baseAmount > 0 ? Math.round(ratio * next * 10) / 10 : baseProtein;
+      list.push({
+        index: i,
+        amount: String(next),
+        unit: "g",
+        protein_g: newProtein,
+      });
+    });
+    return list;
+  }, [recipe, amounts]);
+
+  const previewProteinG = useMemo(() => {
+    if (!recipe?.ingredients?.length) {
+      return recipe?.protein_g_per_serving
+        ? Math.round(recipe.protein_g_per_serving * servings * 10) / 10
+        : null;
+    }
+    const baseTotal = recipe.ingredients.reduce(
+      (s, i) => s + (typeof i.protein_g === "number" ? i.protein_g : 0),
+      0,
+    );
+    if (baseTotal === 0) {
+      return recipe.protein_g_per_serving
+        ? Math.round(recipe.protein_g_per_serving * servings * 10) / 10
+        : null;
+    }
+    const overrideMap = new Map<number, FoodLogIngredientOverride>();
+    overrides.forEach((o) => overrideMap.set(o.index, o));
+    const overriddenTotal = recipe.ingredients.reduce((s, ing, i) => {
+      const o = overrideMap.get(i);
+      const protein =
+        o?.protein_g != null
+          ? o.protein_g
+          : typeof ing.protein_g === "number"
+            ? ing.protein_g
+            : 0;
+      return s + protein;
+    }, 0);
+    const proteinPerServing =
+      (overriddenTotal / baseTotal) * (recipe.protein_g_per_serving ?? 0);
+    return Math.round(proteinPerServing * servings * 10) / 10;
+  }, [recipe, overrides, servings]);
+
+  const submit = async () => {
+    if (!recipe) return;
+    setSubmitting(true);
+    try {
+      const body = {
+        recipe_id: recipe.id,
+        logged_date: date,
+        meal_type: mealType,
+        servings,
+        overrides:
+          overrides.length > 0 ? { ingredients: overrides } : null,
+      };
+      const res = await fetch("/api/food-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      onLogged?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "記録に失敗しました");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const adjustAmount = (i: number, delta: number) => {
+    setAmounts((prev) => {
+      const cur = Number(prev[i]) || 0;
+      const next = Math.max(0, cur + delta);
+      return { ...prev, [i]: String(next) };
+    });
+  };
+
+  return (
+    <Dialog
+      open={!!recipe}
+      onOpenChange={(open) => {
+        if (!open && !submitting) onClose();
+      }}
+    >
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>食事を記録</DialogTitle>
+          {recipe && <DialogDescription>{recipe.title}</DialogDescription>}
+        </DialogHeader>
+
+        {recipe && (
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">食事タイプ</label>
+              <Select
+                value={mealType}
+                onValueChange={(v) => setMealType(v as MealType)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MEAL_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {MEAL_TYPE_LABELS[t]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">日付</label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full text-sm border border-border rounded-md px-3 py-2 bg-background"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">食分</label>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => setServings((s) => Math.max(0.5, s - 0.5))}
+                >
+                  <Minus className="w-3 h-3" />
+                </Button>
+                <Input
+                  type="number"
+                  step="0.5"
+                  value={String(servings)}
+                  onChange={(e) =>
+                    setServings(Math.max(0.5, Number(e.target.value) || 1))
+                  }
+                  className="text-center"
+                />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => setServings((s) => s + 0.5)}
+                >
+                  <Plus className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+
+            {previewProteinG != null && (
+              <div className="text-sm bg-primary/5 border border-primary/20 rounded-md px-3 py-2">
+                <span className="text-muted-foreground">予想タンパク質: </span>
+                <span className="font-semibold text-primary">
+                  {previewProteinG}g
+                </span>
+              </div>
+            )}
+
+            {(recipe.ingredients?.some((i) => (i.unit ?? "") === "g") ?? false) && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowDetails((s) => !s)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  {showDetails ? "− 食材を閉じる" : "+ 食材を微修正"}
+                </button>
+                {showDetails && (
+                  <div className="mt-2 space-y-1.5">
+                    {recipe.ingredients?.map((ing, i) =>
+                      (ing.unit ?? "") === "g" ? (
+                        <Card key={i} className="border-border">
+                          <CardContent className="p-2 flex items-center gap-2">
+                            <span className="text-xs flex-1 truncate">
+                              {ing.name}
+                            </span>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => adjustAmount(i, -10)}
+                            >
+                              <Minus className="w-3 h-3" />
+                            </Button>
+                            <Input
+                              className="w-20 text-center"
+                              type="number"
+                              value={amounts[i] ?? ""}
+                              onChange={(e) =>
+                                setAmounts((prev) => ({
+                                  ...prev,
+                                  [i]: e.target.value,
+                                }))
+                              }
+                            />
+                            <span className="text-xs">g</span>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => adjustAmount(i, 10)}
+                            >
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ) : null,
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={onClose}
+                disabled={submitting}
+              >
+                キャンセル
+              </Button>
+              <Button
+                className="flex-1 gap-1.5"
+                onClick={submit}
+                disabled={submitting}
+              >
+                {submitting && (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                )}
+                {submitting ? "記録中..." : "記録する"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

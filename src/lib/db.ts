@@ -7,6 +7,9 @@ import type {
   UserSettings,
   MealPlan,
   MealPlanWithRecipe,
+  FoodLog,
+  FoodLogWithRecipe,
+  MealType,
 } from "@/types/database";
 
 function s(supabase: SupabaseClient) {
@@ -251,6 +254,93 @@ export const db = {
     },
     deleteMany: async (supabase: SupabaseClient, ids: string[]) => {
       return s(supabase).from("shopping_list_items").delete().in("id", ids);
+    },
+  },
+
+  recipes2: {
+    insert: async (
+      supabase: SupabaseClient,
+      values: Partial<Recipe> & { user_id: string; title: string },
+    ) => {
+      return s(supabase).from("recipes").insert(values).select().single();
+    },
+    delete: async (supabase: SupabaseClient, id: string) => {
+      return s(supabase).from("recipes").delete().eq("id", id);
+    },
+  },
+
+  foodLogs: {
+    getByDate: async (
+      supabase: SupabaseClient,
+      userId: string,
+      date: string,
+    ): Promise<FoodLogWithRecipe[]> => {
+      const { data } = await s(supabase)
+        .from("food_logs")
+        .select(
+          "*, recipe:recipes(id, title, title_en, image_url, protein_g_per_serving, calorie_kcal_per_serving, servings)",
+        )
+        .eq("user_id", userId)
+        .eq("logged_date", date)
+        .order("created_at");
+      return (data ?? []) as unknown as FoodLogWithRecipe[];
+    },
+
+    getByDateRange: async (
+      supabase: SupabaseClient,
+      userId: string,
+      startDate: string,
+      endDate: string,
+    ): Promise<FoodLogWithRecipe[]> => {
+      const { data } = await s(supabase)
+        .from("food_logs")
+        .select(
+          "*, recipe:recipes(id, title, title_en, image_url, protein_g_per_serving, calorie_kcal_per_serving, servings)",
+        )
+        .eq("user_id", userId)
+        .gte("logged_date", startDate)
+        .lte("logged_date", endDate)
+        .order("logged_date")
+        .order("created_at");
+      return (data ?? []) as unknown as FoodLogWithRecipe[];
+    },
+
+    getRecentByMealType: async (
+      supabase: SupabaseClient,
+      userId: string,
+      mealType: MealType,
+      limit: number,
+    ): Promise<FoodLogWithRecipe[]> => {
+      const { data } = await s(supabase)
+        .from("food_logs")
+        .select(
+          "*, recipe:recipes(id, title, title_en, image_url, protein_g_per_serving, calorie_kcal_per_serving, servings)",
+        )
+        .eq("user_id", userId)
+        .eq("meal_type", mealType)
+        .order("logged_date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      return (data ?? []) as unknown as FoodLogWithRecipe[];
+    },
+
+    insert: async (
+      supabase: SupabaseClient,
+      values: Omit<FoodLog, "id" | "created_at">,
+    ) => {
+      return s(supabase).from("food_logs").insert(values).select().single();
+    },
+
+    update: async (
+      supabase: SupabaseClient,
+      id: string,
+      values: Partial<FoodLog>,
+    ) => {
+      return s(supabase).from("food_logs").update(values).eq("id", id);
+    },
+
+    delete: async (supabase: SupabaseClient, id: string) => {
+      return s(supabase).from("food_logs").delete().eq("id", id);
     },
   },
 };

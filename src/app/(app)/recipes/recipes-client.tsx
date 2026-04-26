@@ -2,15 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Clock,
   Plus,
-  RefreshCw,
-  Sparkles,
-  Link2,
-  PencilLine,
   UtensilsCrossed,
   CheckCircle2,
+  CalendarPlus,
 } from "lucide-react";
 import {
   Button,
@@ -24,31 +22,24 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  Input,
-  Textarea,
   toast,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
-import { Recipe } from "@/types/database";
-import { useRouter } from "next/navigation";
+import { Recipe, MealType } from "@/types/database";
 import { useFoodImage } from "@/hooks/use-food-image";
 import { createClient } from "@/lib/supabase/client";
 import { db } from "@/lib/db";
+import { LogMealDialog } from "@/components/log-meal-dialog";
 
 function RecipeImage({ recipe }: { recipe: Recipe }) {
   const query = recipe.title_en ?? recipe.title;
-  const { imageUrl, loading, error } = useFoodImage(
+  const { imageUrl, loading } = useFoodImage(
     recipe.image_url ? null : query,
   );
   const src = recipe.image_url ?? imageUrl;
 
   if (!recipe.image_url && loading) return <Skeleton className="w-full h-40" />;
-  if (!src || error) {
+  if (!src) {
     return (
       <div className="w-full h-40 bg-surface-subtle flex items-center justify-center">
         <UtensilsCrossed
@@ -72,9 +63,11 @@ function RecipeImage({ recipe }: { recipe: Recipe }) {
 function RecipeCard({
   recipe,
   onToggleTried,
+  onLog,
 }: {
   recipe: Recipe;
   onToggleTried: (id: string, tried: boolean) => void;
+  onLog: (recipe: Recipe) => void;
 }) {
   return (
     <div className="relative">
@@ -105,7 +98,29 @@ function RecipeCard({
                   作り置き
                 </Badge>
               )}
+              {recipe.source_tag === "self" && (
+                <Badge variant="outline" className="text-xs">
+                  自分で登録
+                </Badge>
+              )}
+              {recipe.source_tag === "ai_suggest" && (
+                <Badge variant="outline" className="text-xs">
+                  AI提案
+                </Badge>
+              )}
             </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1"
+              onClick={(e) => {
+                e.preventDefault();
+                onLog(recipe);
+              }}
+            >
+              <CalendarPlus className="w-3.5 h-3.5" />
+              今日記録する
+            </Button>
           </CardContent>
         </Card>
       </Link>
@@ -131,126 +146,22 @@ interface RecipesClientProps {
   recipes: Recipe[];
 }
 
-const SUGGEST_TAGS = [
-  "作り置き",
-  "時短(30分以内)",
-  "和食",
-  "中華",
-  "洋食",
-  "エスニック",
-] as const;
+type SourceFilter = "all" | "self" | "ai_suggest";
 
 export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
   const router = useRouter();
   const supabase = createClient();
   const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
-  const [addOpen, setAddOpen] = useState(false);
-  const [addMode, setAddMode] = useState<"ai" | "url" | "text">("ai");
-  const [generating, setGenerating] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [creatingFromText, setCreatingFromText] = useState(false);
-  const [mainIngredient, setMainIngredient] = useState("");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [importUrl, setImportUrl] = useState("");
-  const [freeText, setFreeText] = useState("");
+  const [filter, setFilter] = useState<SourceFilter>("all");
+  const [logTarget, setLogTarget] = useState<Recipe | null>(null);
+  const [defaultMealType] = useState<MealType>("dinner");
 
-  const tried = recipes.filter((r) => r.is_tried);
-  const untried = recipes.filter((r) => !r.is_tried);
-
-  const toggleTag = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
-  };
-
-  const resetAddForm = () => {
-    setMainIngredient("");
-    setSelectedTags([]);
-    setImportUrl("");
-    setFreeText("");
-  };
-
-  const generateRecipes = async () => {
-    setGenerating(true);
-    try {
-      const res = await fetch("/api/recipes/suggest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          main_ingredient: mainIngredient.trim() || undefined,
-          tags: selectedTags,
-        }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setRecipes([...data.recipes, ...recipes]);
-      toast.success(`${data.recipes.length}件のレシピを提案しました`);
-      setAddOpen(false);
-      resetAddForm();
-    } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "レシピ提案に失敗しました";
-      toast.error(msg);
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const importFromUrl = async () => {
-    const url = importUrl.trim();
-    if (!url) {
-      toast.error("URLを入力してください");
-      return;
-    }
-    setImporting(true);
-    try {
-      const res = await fetch("/api/recipes/import-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setRecipes([data.recipe, ...recipes]);
-      toast.success(`「${data.recipe.title}」を追加しました`);
-      setAddOpen(false);
-      resetAddForm();
-    } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "URLからの取込に失敗しました";
-      toast.error(msg);
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const createFromText = async () => {
-    const text = freeText.trim();
-    if (!text) {
-      toast.error("メモを入力してください");
-      return;
-    }
-    setCreatingFromText(true);
-    try {
-      const res = await fetch("/api/recipes/from-text", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setRecipes([data.recipe, ...recipes]);
-      toast.success(`「${data.recipe.title}」を追加しました`);
-      setAddOpen(false);
-      resetAddForm();
-    } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "レシピ生成に失敗しました";
-      toast.error(msg);
-    } finally {
-      setCreatingFromText(false);
-    }
-  };
+  const filtered = recipes.filter((r) => {
+    if (filter === "all") return true;
+    return r.source_tag === filter;
+  });
+  const tried = filtered.filter((r) => r.is_tried);
+  const untried = filtered.filter((r) => !r.is_tried);
 
   const toggleTried = async (id: string, isTried: boolean) => {
     const { error } = await db.recipes.update(supabase, id, {
@@ -274,7 +185,7 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
     items.length === 0 ? (
       <EmptyState
         icon={<UtensilsCrossed className="w-6 h-6" />}
-        title="レシピがありません"
+        title="該当するレシピがありません"
         description=""
       />
     ) : (
@@ -284,6 +195,7 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
             key={recipe.id}
             recipe={recipe}
             onToggleTried={toggleTried}
+            onLog={setLogTarget}
           />
         ))}
       </div>
@@ -293,25 +205,41 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
     <div className="flex flex-col">
       <AppHeader />
 
-      <div className="px-4 md:px-8 pt-5 pb-8 space-y-5 max-w-3xl">
+      <div className="px-4 md:px-8 pt-5 pb-8 space-y-5 max-w-5xl">
         <PageHeader
           title="レシピ"
           description={`${recipes.length}件`}
           actions={
             <Button
-              onClick={() => {
-                resetAddForm();
-                setAddMode("ai");
-                setAddOpen(true);
-              }}
               size="sm"
               className="gap-1.5"
+              onClick={() => router.push("/recipes/new")}
             >
               <Plus className="w-3.5 h-3.5" />
               レシピを追加
             </Button>
           }
         />
+
+        <div className="flex flex-wrap gap-2 text-xs">
+          {[
+            { value: "all", label: "すべて" },
+            { value: "self", label: "自分で登録" },
+            { value: "ai_suggest", label: "AI提案" },
+          ].map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value as SourceFilter)}
+              className={`px-3 py-1 rounded-full border transition-colors ${
+                filter === f.value
+                  ? "bg-primary text-white border-primary"
+                  : "bg-surface-subtle text-foreground border-border"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
 
         <Tabs defaultValue="untried">
           <TabsList>
@@ -338,7 +266,7 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
               <EmptyState
                 icon={<UtensilsCrossed className="w-6 h-6" />}
                 title="レシピがまだありません"
-                description="「レシピを追加」から AI提案 / URL / メモ で登録できます"
+                description="「レシピを追加」から作りましょう"
               />
             ) : (
               <RecipeGrid items={untried} />
@@ -351,184 +279,15 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
         </Tabs>
       </div>
 
-      <Dialog
-        open={addOpen}
-        onOpenChange={(open) => {
-          if (generating || importing || creatingFromText) return;
-          setAddOpen(open);
-          if (!open) resetAddForm();
+      <LogMealDialog
+        recipe={logTarget}
+        defaultMealType={defaultMealType}
+        onClose={() => setLogTarget(null)}
+        onLogged={() => {
+          toast.success("食事を記録しました");
+          setLogTarget(null);
         }}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>レシピを追加</DialogTitle>
-            <DialogDescription>
-              AI提案・URL取込・自分で書く から選べます。
-            </DialogDescription>
-          </DialogHeader>
-
-          <Tabs
-            value={addMode}
-            onValueChange={(v) => setAddMode(v as "ai" | "url" | "text")}
-          >
-            <TabsList className="grid grid-cols-3 w-full">
-              <TabsTrigger value="ai" className="gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                AI提案
-              </TabsTrigger>
-              <TabsTrigger value="url" className="gap-1.5">
-                <Link2 className="w-3.5 h-3.5" />
-                URL
-              </TabsTrigger>
-              <TabsTrigger value="text" className="gap-1.5">
-                <PencilLine className="w-3.5 h-3.5" />
-                自分で書く
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="ai" className="mt-4 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">
-                  メイン食材（任意）
-                </label>
-                <Input
-                  placeholder="例: 鶏胸肉"
-                  value={mainIngredient}
-                  onChange={(e) => setMainIngredient(e.target.value)}
-                  disabled={generating}
-                />
-                <p className="text-xs text-muted-foreground">
-                  入れた食材を中心としたレシピを提案します
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">タグ（任意）</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {SUGGEST_TAGS.map((tag) => {
-                    const active = selectedTags.includes(tag);
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => toggleTag(tag)}
-                        disabled={generating}
-                        className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                          active
-                            ? "bg-primary text-white border-primary"
-                            : "bg-surface-subtle text-foreground border-border hover:border-primary/40"
-                        }`}
-                      >
-                        {tag}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  高タンパクは常に前提条件です
-                </p>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setAddOpen(false)}
-                  disabled={generating}
-                >
-                  キャンセル
-                </Button>
-                <Button
-                  className="flex-1 gap-1.5"
-                  onClick={generateRecipes}
-                  disabled={generating}
-                >
-                  <RefreshCw
-                    className={`w-3.5 h-3.5 ${generating ? "animate-spin" : ""}`}
-                  />
-                  {generating ? "提案中..." : "提案してもらう"}
-                </Button>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="url" className="mt-4 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">レシピのURL</label>
-                <Input
-                  type="url"
-                  placeholder="https://example.com/recipe/..."
-                  value={importUrl}
-                  onChange={(e) => setImportUrl(e.target.value)}
-                  disabled={importing}
-                />
-                <p className="text-xs text-muted-foreground">
-                  該当ページから材料・手順を抽出して保存します
-                </p>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setAddOpen(false)}
-                  disabled={importing}
-                >
-                  キャンセル
-                </Button>
-                <Button
-                  className="flex-1 gap-1.5"
-                  onClick={importFromUrl}
-                  disabled={importing || !importUrl.trim()}
-                >
-                  <RefreshCw
-                    className={`w-3.5 h-3.5 ${importing ? "animate-spin" : ""}`}
-                  />
-                  {importing ? "取込中..." : "取り込む"}
-                </Button>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="text" className="mt-4 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">レシピのメモ</label>
-                <Textarea
-                  rows={6}
-                  placeholder={
-                    "例: 鶏胸肉をマヨネーズと醤油で焼く。\n副菜にブロッコリーを蒸す。\n2人分。"
-                  }
-                  value={freeText}
-                  onChange={(e) => setFreeText(e.target.value)}
-                  disabled={creatingFromText}
-                />
-                <p className="text-xs text-muted-foreground">
-                  ざっくり書けばAIが整ったレシピに仕上げて保存します（高タンパク前提）
-                </p>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setAddOpen(false)}
-                  disabled={creatingFromText}
-                >
-                  キャンセル
-                </Button>
-                <Button
-                  className="flex-1 gap-1.5"
-                  onClick={createFromText}
-                  disabled={creatingFromText || !freeText.trim()}
-                >
-                  <RefreshCw
-                    className={`w-3.5 h-3.5 ${creatingFromText ? "animate-spin" : ""}`}
-                  />
-                  {creatingFromText ? "生成中..." : "レシピにする"}
-                </Button>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
+      />
     </div>
   );
 }

@@ -1,59 +1,99 @@
-// Recipe suggestion
-export interface SuggestedIngredient {
-  name: string;
-  name_en: string | null;
-  name_vi: string | null;
-  amount: string;
-  in_pantry?: boolean;
-  category: string | null;
-}
+import type {
+  RecipeIngredient,
+  RecipeStep,
+  RecipeSourceTag,
+  MealType,
+  FoodLogOverrides,
+  FoodLogWithRecipe,
+} from "./database";
 
-export interface SuggestedStep {
-  order: number;
-  text: string;
-  image_query: string | null;
-}
-
-export interface SuggestedRecipe {
+// Draft recipe used during create/edit flows (before save).
+export interface DraftRecipe {
   title: string;
-  title_en: string;
+  title_en: string | null;
   description: string | null;
-  protein_g_per_serving: number;
+  protein_g_per_serving: number | null;
   calorie_kcal_per_serving: number | null;
   prep_time_min: number | null;
   is_meal_prep_friendly: boolean;
-  meal_prep_days: number;
+  meal_prep_days: number | null;
   servings: number;
-  ingredients: SuggestedIngredient[];
-  steps: SuggestedStep[];
+  ingredients: RecipeIngredient[];
+  steps: RecipeStep[];
 }
 
-export interface RecipeSuggestClaudeResponse {
-  recipes: SuggestedRecipe[];
+// POST /api/recipes/from-name
+export interface RecipeFromNameRequest {
+  title: string;
+}
+export interface RecipeFromNameResponse {
+  recipe: DraftRecipe;
 }
 
-export interface RecipeSuggestRequest {
-  main_ingredient?: string;
-  tags?: string[];
+// POST /api/recipes/suggest-candidates
+export interface RecipeSuggestCandidatesRequest {
+  conditions: string;
+}
+export interface RecipeSuggestCandidatesResponse {
+  candidates: DraftRecipe[];
 }
 
-export interface RecipeImportUrlRequest {
-  url: string;
+// POST /api/recipes/save (create new from draft)
+// PUT  /api/recipes/save?id=...  (update existing from draft)
+export interface RecipeSaveRequest {
+  recipe: DraftRecipe;
+  source_tag: RecipeSourceTag;
+}
+export interface RecipeSaveResponse {
+  recipe_id: string;
 }
 
-export interface RecipeImportClaudeResponse {
-  recipe: SuggestedRecipe;
+// POST /api/recipes/save-many (batch create from candidates)
+export interface RecipeSaveManyRequest {
+  recipes: DraftRecipe[];
+  source_tag: RecipeSourceTag;
+}
+export interface RecipeSaveManyResponse {
+  recipe_ids: string[];
 }
 
-export interface RecipeFromTextRequest {
-  text: string;
+// POST /api/food-logs
+export interface FoodLogCreateRequest {
+  recipe_id: string;
+  logged_date: string;
+  meal_type: MealType;
+  servings?: number;
+  overrides?: FoodLogOverrides | null;
+}
+export interface FoodLogCreateResponse {
+  food_log: FoodLogWithRecipe;
+}
+
+// POST /api/food-logs/repeat
+export interface FoodLogRepeatRequest {
+  food_log_id: string;
+  logged_date: string;
+}
+export interface FoodLogRepeatResponse {
+  food_log: FoodLogWithRecipe;
+}
+
+// GET /api/food-logs?date=...
+// GET /api/food-logs?start=...&end=...
+export interface FoodLogsListResponse {
+  logs: FoodLogWithRecipe[];
+}
+
+// GET /api/food-logs/recent?meal_type=...&limit=...
+export interface FoodLogsRecentResponse {
+  logs: FoodLogWithRecipe[];
 }
 
 // Plan mapping
 export interface PlanMapRequest {
   recipe_id: string;
   planned_date: string;
-  meal_type: "breakfast" | "lunch" | "dinner";
+  meal_type: MealType;
   servings: number;
   repeat_rule: "none" | "daily" | "weekdays" | "custom";
   repeat_days: number[];

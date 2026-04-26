@@ -11,6 +11,8 @@ export interface RecipeIngredient {
   name_en: string | null;
   name_vi: string | null;
   amount: string;
+  unit: string | null;
+  protein_g: number | null;
   in_pantry: boolean;
   category: string | null;
 }
@@ -20,6 +22,8 @@ export interface RecipeStep {
   text: string;
   image_query: string | null;
 }
+
+export type RecipeSourceTag = "self" | "ai_suggest";
 
 export interface Recipe {
   id: string;
@@ -38,6 +42,7 @@ export interface Recipe {
   ingredients: RecipeIngredient[] | null;
   steps: RecipeStep[] | null;
   ai_generated: boolean;
+  source_tag: RecipeSourceTag | null;
   created_at: string;
 }
 
@@ -91,13 +96,58 @@ export interface ShoppingListItem {
   created_at: string;
 }
 
-export type MealType = "breakfast" | "lunch" | "dinner";
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
 export const MEAL_TYPE_LABELS: Record<MealType, string> = {
   breakfast: "朝食",
   lunch: "昼食",
   dinner: "夕食",
+  snack: "間食",
 };
+
+export const MEAL_TYPES: MealType[] = [
+  "breakfast",
+  "lunch",
+  "dinner",
+  "snack",
+];
+
+export interface FoodLogIngredientOverride {
+  index: number;
+  amount?: string;
+  unit?: string | null;
+  protein_g?: number | null;
+}
+
+export interface FoodLogOverrides {
+  ingredients?: FoodLogIngredientOverride[];
+}
+
+export interface FoodLog {
+  id: string;
+  user_id: string;
+  recipe_id: string;
+  logged_date: string;
+  meal_type: MealType;
+  servings: number;
+  overrides: FoodLogOverrides | null;
+  actual_protein_g: number | null;
+  actual_calorie_kcal: number | null;
+  created_at: string;
+}
+
+export interface FoodLogWithRecipe extends FoodLog {
+  recipe: Pick<
+    Recipe,
+    | "id"
+    | "title"
+    | "title_en"
+    | "image_url"
+    | "protein_g_per_serving"
+    | "calorie_kcal_per_serving"
+    | "servings"
+  >;
+}
 
 export const PANTRY_CATEGORIES = [
   "タンパク源",
