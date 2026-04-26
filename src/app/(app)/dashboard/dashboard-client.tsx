@@ -115,8 +115,7 @@ export function DashboardClient({
   const [datePlans, setDatePlans] =
     useState<MealPlanWithRecipe[]>(initialDatePlans);
   const [allLogs, setAllLogs] = useState<FoodLogWithRecipe[]>(twoWeekLogs);
-  const [allPlans, setAllPlans] =
-    useState<MealPlanWithRecipe[]>(twoWeekPlans);
+  const [allPlans, setAllPlans] = useState<MealPlanWithRecipe[]>(twoWeekPlans);
   const [logTarget, setLogTarget] = useState<{
     recipe: Recipe;
     mealType: MealType;
@@ -374,10 +373,7 @@ export function DashboardClient({
             {MEAL_TYPES.map((mt) => {
               const entries = entriesByMealType[mt];
               return (
-                <div
-                  key={mt}
-                  className="flex items-center gap-2 p-3"
-                >
+                <div key={mt} className="flex items-center gap-2 p-3">
                   <Badge
                     variant="secondary"
                     className="font-semibold w-12 justify-center"

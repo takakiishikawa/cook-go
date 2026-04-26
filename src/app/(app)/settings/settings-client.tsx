@@ -41,8 +41,7 @@ export function SettingsClient({ userId, settings }: SettingsClientProps) {
     settings?.weight_kg && settings?.calorie_target_kcal
       ? Math.round(settings.calorie_target_kcal / settings.weight_kg)
       : 30;
-  const [kcalMultiplier, setKcalMultiplier] =
-    useState<number>(initialKcalMult);
+  const [kcalMultiplier, setKcalMultiplier] = useState<number>(initialKcalMult);
   const [saving, setSaving] = useState(false);
 
   const weightNum = useMemo(() => parseFloat(weightKg), [weightKg]);
@@ -194,9 +193,7 @@ export function SettingsClient({ userId, settings }: SettingsClientProps) {
                   max={45}
                   step={1}
                   value={kcalMultiplier}
-                  onChange={(e) =>
-                    setKcalMultiplier(parseInt(e.target.value))
-                  }
+                  onChange={(e) => setKcalMultiplier(parseInt(e.target.value))}
                   className="w-full"
                 />
                 <p className="text-xs text-muted-foreground">

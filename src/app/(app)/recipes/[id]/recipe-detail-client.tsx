@@ -427,9 +427,7 @@ export function RecipeDetailClient({
                         {step.text}
                       </p>
                     </div>
-                    {step.image_query && (
-                      <StepImage query={step.image_query} />
-                    )}
+                    {step.image_query && <StepImage query={step.image_query} />}
                   </button>
                 );
               })}

@@ -16,7 +16,9 @@ interface RecipeForImage {
  * レシピ情報を渡すと、Unsplash 検索に適した英語クエリを Claude Haiku で生成する。
  * 失敗時は title_en もしくは title を返す。
  */
-export async function generateImageQuery(recipe: RecipeForImage): Promise<string> {
+export async function generateImageQuery(
+  recipe: RecipeForImage,
+): Promise<string> {
   const fallback = recipe.title_en?.trim() || recipe.title;
   try {
     const ingredientsList = (recipe.ingredients ?? [])
