@@ -7,6 +7,8 @@ import type {
   FoodLogWithRecipe,
 } from "./database";
 
+export type { RecipeSourceTag };
+
 // Draft recipe used during create/edit flows (before save).
 export interface DraftRecipe {
   title: string;
@@ -20,6 +22,7 @@ export interface DraftRecipe {
   servings: number;
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
+  source_tag?: RecipeSourceTag | null;
 }
 
 // POST /api/recipes/from-name

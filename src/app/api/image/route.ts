@@ -1,7 +1,27 @@
 import { NextResponse } from "next/server";
+import { fetchUnsplashImage } from "@/lib/unsplash";
 import type { ImageResponse } from "@/types/api";
 
-const UNSPLASH_CACHE: Record<string, { url: string; expires: number }> = {};
+const CACHE: Record<string, { url: string; expires: number }> = {};
+const TTL_MS = 86_400_000; // 1 day
+
+async function fetchWikipediaImage(query: string): Promise<string | null> {
+  // Try Japanese first, then English
+  for (const lang of ["ja", "en"]) {
+    try {
+      const res = await fetch(
+        `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`,
+        { next: { revalidate: 86400 } },
+      );
+      if (!res.ok) continue;
+      const data = (await res.json()) as { thumbnail?: { source?: string } };
+      if (data.thumbnail?.source) return data.thumbnail.source;
+    } catch {
+      // continue
+    }
+  }
+  return null;
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -10,53 +30,36 @@ export async function GET(request: Request) {
     return NextResponse.json({ imageUrl: null } satisfies ImageResponse);
 
   const now = Date.now();
-  const cached = UNSPLASH_CACHE[query];
+  const cached = CACHE[query];
   if (cached && cached.expires > now) {
     return NextResponse.json({ imageUrl: cached.url } satisfies ImageResponse);
   }
 
-  // Unsplash
-  const key = process.env.UNSPLASH_ACCESS_KEY;
-  if (key) {
-    try {
-      const res = await fetch(
-        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`,
-        {
-          headers: { Authorization: `Client-ID ${key}` },
-          next: { revalidate: 86400 },
-        },
-      );
-      if (res.ok) {
-        const data = (await res.json()) as {
-          results?: Array<{ urls?: { regular?: string } }>;
-        };
-        const url = data.results?.[0]?.urls?.regular ?? null;
-        if (url) {
-          UNSPLASH_CACHE[query] = { url, expires: now + 86400 * 1000 };
-          return NextResponse.json({ imageUrl: url } satisfies ImageResponse);
-        }
-      }
-    } catch {
-      // fall through to Wikipedia
+  // Try multiple Unsplash variants for better food/ingredient hits
+  const isJapanese = /[ぁ-んァ-ヴー一-龠]/.test(query);
+  const variants: string[] = [];
+  if (isJapanese) {
+    variants.push(`${query} food`);
+    variants.push(query);
+  } else {
+    variants.push(query);
+    variants.push(`${query} food`);
+    variants.push(`${query} fresh ingredient`);
+  }
+
+  for (const v of variants) {
+    const url = await fetchUnsplashImage(v);
+    if (url) {
+      CACHE[query] = { url, expires: now + TTL_MS };
+      return NextResponse.json({ imageUrl: url } satisfies ImageResponse);
     }
   }
 
-  // Fallback: Japanese Wikipedia
-  try {
-    const jaRes = await fetch(
-      `https://ja.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`,
-      { next: { revalidate: 86400 } },
-    );
-    if (jaRes.ok) {
-      const data = (await jaRes.json()) as { thumbnail?: { source?: string } };
-      if (data.thumbnail?.source) {
-        return NextResponse.json({
-          imageUrl: data.thumbnail.source,
-        } satisfies ImageResponse);
-      }
-    }
-  } catch {
-    // ignore
+  // Wikipedia fallback
+  const wiki = await fetchWikipediaImage(query);
+  if (wiki) {
+    CACHE[query] = { url: wiki, expires: now + TTL_MS };
+    return NextResponse.json({ imageUrl: wiki } satisfies ImageResponse);
   }
 
   return NextResponse.json({ imageUrl: null } satisfies ImageResponse);

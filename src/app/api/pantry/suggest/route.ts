@@ -70,11 +70,18 @@ export async function GET(request: Request) {
     client.messages
       .create({
         model: CLAUDE_HAIKU,
-        max_tokens: 20,
+        max_tokens: 30,
         messages: [
           {
             role: "user",
-            content: `食材「${name}」のカテゴリーを以下から1つだけ選んでください。カテゴリー名のみ回答してください：${PANTRY_CATEGORIES.join("、")}`,
+            content: `食材・調味料「${name}」が次のどのカテゴリーに当てはまるか、1つだけ選んでカテゴリー名のみ返してください。説明・引用符・記号は一切付けないこと。
+カテゴリー: タンパク源、野菜、調味料、炭水化物、その他
+
+備考:
+- みりん・酒・しょうゆ・出汁・ソース・スパイス類・砂糖・塩・酢・油は「調味料」
+- 米・パン・麺・芋類は「炭水化物」
+- 肉・魚・卵・豆腐・チーズ・牛乳は「タンパク源」
+- 葉物・果物・きのこ・豆は「野菜」`,
           },
         ],
       })
@@ -83,13 +90,18 @@ export async function GET(request: Request) {
 
   let category = "その他";
   if (categoryResponse) {
-    const text =
+    const raw =
       categoryResponse.content[0].type === "text"
         ? categoryResponse.content[0].text.trim()
         : "";
-    if ((PANTRY_CATEGORIES as readonly string[]).includes(text)) {
-      category = text;
-    }
+    // Try exact match first, then loose contains
+    const exact = (PANTRY_CATEGORIES as readonly string[]).find(
+      (c) => c === raw,
+    );
+    const loose =
+      exact ??
+      (PANTRY_CATEGORIES as readonly string[]).find((c) => raw.includes(c));
+    if (loose) category = loose;
   }
 
   return NextResponse.json({

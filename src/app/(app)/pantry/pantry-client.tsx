@@ -1,16 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Plus, ImageOff, Trash2 } from "lucide-react";
+import { Plus, ImageOff, Trash2, Check } from "lucide-react";
 import {
   Button,
   Input,
   Badge,
   Card,
   CardContent,
-  TagGroup,
-  Tag,
-  Section,
+  Switch,
   PageHeader,
   toast,
 } from "@takaki/go-design-system";
@@ -28,15 +26,23 @@ interface PantryClientProps {
 function PantryItemImage({
   imageUrl,
   name,
+  size = "lg",
 }: {
   imageUrl: string | null;
   name: string;
+  size?: "lg" | "sm";
 }) {
   const [error, setError] = useState(false);
+  const dim = size === "lg" ? "w-16 h-16" : "w-10 h-10";
   if (!imageUrl || error) {
     return (
-      <div className="w-10 h-10 rounded-md bg-surface-subtle flex items-center justify-center flex-shrink-0">
-        <ImageOff className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+      <div
+        className={`${dim} rounded-md bg-surface-subtle flex items-center justify-center flex-shrink-0`}
+      >
+        <ImageOff
+          className="w-4 h-4 text-muted-foreground"
+          strokeWidth={1.5}
+        />
       </div>
     );
   }
@@ -44,8 +50,10 @@ function PantryItemImage({
     <img
       src={imageUrl}
       alt={name}
-      className="w-10 h-10 rounded-md object-cover flex-shrink-0 bg-muted"
+      className={`${dim} rounded-md object-cover flex-shrink-0 bg-muted`}
       onError={() => setError(true)}
+      loading="lazy"
+      decoding="async"
     />
   );
 }
@@ -91,30 +99,32 @@ export function PantryClient({
   }, [newName]);
 
   const toggleStock = async (item: PantryItem) => {
+    const next = !item.in_stock;
+    setItems((prev) =>
+      prev.map((i) => (i.id === item.id ? { ...i, in_stock: next } : i)),
+    );
     const { error } = await db.pantry.update(supabase, item.id, {
-      in_stock: !item.in_stock,
+      in_stock: next,
     });
     if (error) {
       toast.error("更新に失敗しました");
-      return;
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === item.id ? { ...i, in_stock: !next } : i,
+        ),
+      );
     }
-    setItems(
-      items.map((i) =>
-        i.id === item.id ? { ...i, in_stock: !i.in_stock } : i,
-      ),
-    );
   };
 
   const deleteItem = async (item: PantryItem) => {
     setDeletingId(item.id);
+    setItems((prev) => prev.filter((i) => i.id !== item.id));
     const { error } = await db.pantry.delete(supabase, item.id);
     setDeletingId(null);
     if (error) {
       toast.error("削除に失敗しました");
-      return;
+      setItems((prev) => [item, ...prev]);
     }
-    setItems(items.filter((i) => i.id !== item.id));
-    toast.success(`「${item.name}」を削除しました`);
   };
 
   const addItem = async () => {
@@ -165,172 +175,124 @@ export function PantryClient({
     <div className="flex flex-col">
       <AppHeader />
 
-      <div className="px-4 md:px-8 pt-5 pb-8 space-y-5 max-w-3xl">
+      <div className="px-4 md:px-8 pt-5 pb-8 space-y-5 max-w-5xl">
         <PageHeader
           title="食材庫"
-          description={`在庫あり ${inStockCount}品 · 在庫切れ ${outOfStockCount}品`}
+          description={`${inStockCount}/${items.length}品が在庫あり`}
         />
 
-        {/* Stats row */}
-        <div className="grid grid-cols-2 gap-3">
-          <Card>
-            <CardContent className="pt-4 pb-4">
-              <p className="text-xs text-muted-foreground">在庫あり</p>
-              <p className="text-2xl font-semibold text-primary mt-1">
-                {inStockCount}
-                <span className="text-sm font-normal text-muted-foreground ml-1">
-                  品
-                </span>
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-4">
-              <p className="text-xs text-muted-foreground">在庫切れ</p>
-              <p
-                className={cn(
-                  "text-2xl font-semibold mt-1",
-                  outOfStockCount > 0 ? "text-destructive" : "text-foreground",
-                )}
-              >
-                {outOfStockCount}
-                <span className="text-sm font-normal text-muted-foreground ml-1">
-                  品
-                </span>
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Add form */}
-        <Section title="食材を追加">
-          <Card>
-            <CardContent className="pt-4 space-y-3">
-              <div className="flex gap-3">
-                <div className="flex-1 space-y-2">
-                  <Input
-                    placeholder="食材・調味料を追加..."
-                    value={newName}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setNewName(e.target.value)
-                    }
-                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
-                      e.key === "Enter" && addItem()
-                    }
+        {/* Add form: 1行のみ */}
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex gap-2 items-center">
+              {fetchingSuggest ? (
+                <div className="w-12 h-12 rounded-md border border-border bg-surface-subtle flex items-center justify-center flex-shrink-0">
+                  <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : previewImageUrl ? (
+                <img
+                  src={previewImageUrl}
+                  alt={newName}
+                  className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-md border border-dashed border-border bg-surface-subtle flex items-center justify-center flex-shrink-0">
+                  <Plus
+                    className="w-4 h-4 text-muted-foreground"
+                    strokeWidth={1.5}
                   />
-                  <div className="flex items-center gap-1.5 min-h-6">
-                    {fetchingSuggest ? (
-                      <span className="text-xs text-muted-foreground">
-                        カテゴリー判定中...
-                      </span>
-                    ) : newName.trim() ? (
-                      <>
-                        <span className="text-xs text-muted-foreground">
-                          カテゴリー：
-                        </span>
-                        <Badge variant="outline">{suggestedCategory}</Badge>
-                      </>
-                    ) : null}
-                  </div>
                 </div>
-                <div className="flex flex-col items-center justify-center w-16 h-16 rounded-md border border-border bg-surface-subtle flex-shrink-0 overflow-hidden">
-                  {fetchingSuggest ? (
-                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  ) : previewImageUrl ? (
-                    <img
-                      src={previewImageUrl}
-                      alt={newName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <ImageOff
-                      className="w-5 h-5 text-muted-foreground"
-                      strokeWidth={1.5}
-                    />
-                  )}
-                </div>
-              </div>
+              )}
+              <Input
+                placeholder="食材を追加..."
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addItem()}
+                className="flex-1"
+              />
+              {newName.trim() && (
+                <Badge variant="outline" className="hidden sm:inline-flex">
+                  {fetchingSuggest ? "..." : suggestedCategory}
+                </Badge>
+              )}
               <Button
+                size="sm"
                 onClick={addItem}
-                disabled={adding || fetchingSuggest}
-                className="w-full gap-2"
+                disabled={adding || fetchingSuggest || !newName.trim()}
               >
-                <Plus className="w-4 h-4" />
-                {adding ? "追加中..." : "追加する"}
+                {adding ? "追加中" : "追加"}
               </Button>
-            </CardContent>
-          </Card>
-        </Section>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Category filter */}
-        <TagGroup wrap>
+        <div className="flex flex-wrap gap-2 text-xs">
           {categories.map((cat) => (
-            <Tag
+            <button
               key={cat}
-              color={filterCategory === cat ? "primary" : "default"}
               onClick={() => setFilterCategory(cat)}
-              className="cursor-pointer select-none"
+              className={`px-3 py-1 rounded-full border transition-colors ${
+                filterCategory === cat
+                  ? "bg-primary text-white border-primary"
+                  : "bg-surface-subtle text-foreground border-border"
+              }`}
             >
               {cat}
-            </Tag>
+            </button>
           ))}
-        </TagGroup>
+        </div>
 
-        {/* Items list */}
-        <div className="space-y-5 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
+        {/* Items grid (2-column on md+) */}
+        <div className="grid gap-x-6 gap-y-5 md:grid-cols-2">
           {Object.entries(groupedItems).map(([category, categoryItems]) => (
             <div key={category} className="space-y-2">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 {category}
               </h3>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {categoryItems.map((item) => (
                   <div
                     key={item.id}
                     className={cn(
-                      "flex items-center gap-3 bg-card border rounded-md px-3 py-2.5 transition-opacity",
+                      "flex items-center gap-3 bg-card border rounded-md p-2 transition-opacity",
                       !item.in_stock && "opacity-50",
                     )}
                   >
                     <PantryItemImage
                       imageUrl={item.image_url}
                       name={item.name}
+                      size="lg"
                     />
-                    <span
-                      className={cn(
-                        "flex-1 text-sm",
-                        item.in_stock
-                          ? "text-foreground font-medium"
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      {item.name}
-                    </span>
-                    <Button
-                      onClick={() => toggleStock(item)}
-                      variant="ghost"
-                      size="sm"
-                      className="flex-shrink-0 p-0 h-auto hover:bg-transparent"
-                    >
-                      {item.in_stock ? (
-                        <Badge variant="secondary" className="cursor-pointer">
-                          在庫あり
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive" className="cursor-pointer">
-                          切れた
-                        </Badge>
-                      )}
-                    </Button>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={cn(
+                          "text-sm font-medium truncate",
+                          !item.in_stock &&
+                            "text-muted-foreground line-through",
+                        )}
+                      >
+                        {item.name}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <Switch
+                          checked={item.in_stock}
+                          onCheckedChange={() => toggleStock(item)}
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          {item.in_stock ? "あり" : "切れた"}
+                        </span>
+                      </div>
+                    </div>
                     <Button
                       onClick={() => deleteItem(item)}
                       disabled={deletingId === item.id}
                       variant="ghost"
-                      size="sm"
-                      className="p-1.5 h-auto text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      size="icon"
+                      className="text-muted-foreground hover:text-destructive"
                       aria-label="削除"
                     >
-                      <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                      <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
                     </Button>
                   </div>
                 ))}
@@ -341,8 +303,8 @@ export function PantryClient({
 
         {items.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
-            <ImageOff
-              className="w-12 h-12 mx-auto mb-3 opacity-30"
+            <Check
+              className="w-10 h-10 mx-auto mb-3 opacity-30"
               strokeWidth={1}
             />
             <p className="text-sm">食材がまだありません</p>

@@ -36,14 +36,24 @@ interface ShoppingClientProps {
   items: ShoppingListItem[];
 }
 
-function ItemImage({ item }: { item: ShoppingListItem }) {
+function ItemImage({
+  item,
+  size = "md",
+}: {
+  item: ShoppingListItem;
+  size?: "sm" | "md" | "lg";
+}) {
   const query = item.name_en ?? item.name;
   const { imageUrl, error } = useFoodImage(item.image_url ? null : query);
   const src = item.image_url ?? imageUrl;
+  const dim =
+    size === "lg" ? "w-24 h-24" : size === "md" ? "w-16 h-16" : "w-10 h-10";
 
   if (!src || error) {
     return (
-      <div className="w-10 h-10 rounded-md bg-surface-subtle flex items-center justify-center flex-shrink-0">
+      <div
+        className={`${dim} rounded-md bg-surface-subtle flex items-center justify-center flex-shrink-0`}
+      >
         <ImageOff className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
       </div>
     );
@@ -52,7 +62,9 @@ function ItemImage({ item }: { item: ShoppingListItem }) {
     <img
       src={src}
       alt={item.name}
-      className="w-10 h-10 rounded-md object-cover flex-shrink-0 bg-muted"
+      className={`${dim} rounded-md object-cover flex-shrink-0 bg-muted`}
+      loading="lazy"
+      decoding="async"
     />
   );
 }
@@ -192,9 +204,9 @@ export function ShoppingClient({
           <div className="flex-1 overflow-y-auto space-y-3 pt-4">
             {unchecked.map((item) => (
               <Card key={item.id}>
-                <CardContent className="pt-4 pb-4">
+                <CardContent className="p-4">
                   <div className="flex items-center gap-4">
-                    <ItemImage item={item} />
+                    <ItemImage item={item} size="lg" />
                     <div className="flex-1 min-w-0">
                       <p className="text-2xl font-semibold text-foreground">
                         {item.name}
@@ -228,7 +240,7 @@ export function ShoppingClient({
         </SheetContent>
       </Sheet>
 
-      <div className="px-4 md:px-8 pt-5 pb-8 space-y-5 max-w-2xl">
+      <div className="px-4 md:px-8 pt-5 pb-8 space-y-5 max-w-3xl">
         <PageHeader
           title="買い物リスト"
           description={
@@ -291,14 +303,21 @@ export function ShoppingClient({
                         onCheckedChange={() => toggleItem(item)}
                         className="flex-shrink-0"
                       />
-                      <ItemImage item={item} />
+                      <ItemImage item={item} size="md" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{item.name}</p>
+                        <p className="text-base font-medium truncate">
+                          {item.name}
+                        </p>
                         {(item.name_en || item.name_vi) && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground truncate">
                             {[item.name_en, item.name_vi]
                               .filter(Boolean)
                               .join(" · ")}
+                          </p>
+                        )}
+                        {item.amount && (
+                          <p className="text-xs text-muted-foreground">
+                            {item.amount}
                           </p>
                         )}
                       </div>
@@ -342,8 +361,8 @@ export function ShoppingClient({
                         onCheckedChange={() => toggleItem(item)}
                         className="flex-shrink-0"
                       />
-                      <ItemImage item={item} />
-                      <span className="flex-1 text-sm line-through text-muted-foreground">
+                      <ItemImage item={item} size="md" />
+                      <span className="flex-1 text-base line-through text-muted-foreground truncate">
                         {item.name}
                       </span>
                       <Button

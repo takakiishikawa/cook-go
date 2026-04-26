@@ -19,14 +19,15 @@ import {
   CardContent,
   Skeleton,
   PageHeader,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   toast,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
-import { Recipe, MealType } from "@/types/database";
+import {
+  Recipe,
+  MealType,
+  RECIPE_SOURCE_LABELS,
+  type RecipeSourceTag,
+} from "@/types/database";
 import { useFoodImage } from "@/hooks/use-food-image";
 import { createClient } from "@/lib/supabase/client";
 import { db } from "@/lib/db";
@@ -84,22 +85,42 @@ function RecipeCard({
               {recipe.title}
             </p>
             <div className="flex flex-wrap gap-1">
-              {recipe.protein_g_per_serving && (
-                <Badge>P {recipe.protein_g_per_serving}g</Badge>
+              {recipe.protein_g_per_serving != null &&
+                recipe.protein_g_per_serving > 0 && (
+                  <Badge>P {recipe.protein_g_per_serving}g</Badge>
+                )}
+              {recipe.calorie_kcal_per_serving != null &&
+                recipe.calorie_kcal_per_serving > 0 && (
+                  <Badge variant="secondary">
+                    {recipe.calorie_kcal_per_serving}kcal
+                  </Badge>
+                )}
+              {recipe.is_tried && (
+                <Badge
+                  variant="outline"
+                  className="bg-primary/10 text-primary border-transparent"
+                >
+                  作った
+                </Badge>
+              )}
+              {recipe.source_tag && (
+                <Badge variant="outline" className="text-xs">
+                  {RECIPE_SOURCE_LABELS[recipe.source_tag]}
+                </Badge>
               )}
             </div>
             <div className="flex gap-1">
               <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 gap-1 text-xs"
+                size="icon"
+                variant="default"
                 onClick={(e) => {
                   e.preventDefault();
                   onLog(recipe);
                 }}
+                title="今日に追加"
+                className="flex-1"
               >
                 <CalendarPlus className="w-3.5 h-3.5" />
-                記録
               </Button>
               <Button
                 size="icon"
@@ -149,7 +170,7 @@ interface RecipesClientProps {
   recipes: Recipe[];
 }
 
-type SourceFilter = "all" | "self" | "ai_suggest";
+type SourceFilter = "all" | RecipeSourceTag;
 
 export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
   const router = useRouter();
@@ -163,8 +184,6 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
     if (filter === "all") return true;
     return r.source_tag === filter;
   });
-  const tried = filtered.filter((r) => r.is_tried);
-  const untried = filtered.filter((r) => !r.is_tried);
 
   const deleteRecipe = async (recipe: Recipe) => {
     setRecipes((prev) => prev.filter((r) => r.id !== recipe.id));
@@ -174,9 +193,8 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      toast.success(`「${recipe.title}」を削除しました`);
+      toast.success(`${recipe.title} を削除しました`);
     } catch (err) {
-      // 失敗時はリストに戻す
       setRecipes((prev) => [recipe, ...prev]);
       toast.error(err instanceof Error ? err.message : "削除に失敗しました");
     }
@@ -189,7 +207,7 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      toast.success(`「${recipe.title}（コピー）」を作成しました`);
+      toast.success(`${recipe.title}（コピー）を作成しました`);
       router.push(`/recipes/${data.recipe_id}/edit`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "複製に失敗しました");
@@ -207,34 +225,14 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
     setRecipes(
       recipes.map((r) => (r.id === id ? { ...r, is_tried: isTried } : r)),
     );
-    toast.success(
-      isTried
-        ? "「作ったことある」に移動しました"
-        : "「これから作る」に移動しました",
-    );
   };
 
-  const RecipeGrid = ({ items }: { items: Recipe[] }) =>
-    items.length === 0 ? (
-      <EmptyState
-        icon={<UtensilsCrossed className="w-6 h-6" />}
-        title="該当するレシピがありません"
-        description=""
-      />
-    ) : (
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        {items.map((recipe) => (
-          <RecipeCard
-            key={recipe.id}
-            recipe={recipe}
-            onToggleTried={toggleTried}
-            onLog={setLogTarget}
-            onDelete={deleteRecipe}
-            onDuplicate={duplicateRecipe}
-          />
-        ))}
-      </div>
-    );
+  const filterChips: Array<{ value: SourceFilter; label: string }> = [
+    { value: "all", label: "すべて" },
+    { value: "self", label: "自作" },
+    { value: "ai_suggest", label: "AI提案" },
+    { value: "delivery", label: "宅配" },
+  ];
 
   return (
     <div className="flex flex-col">
@@ -257,14 +255,10 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
         />
 
         <div className="flex flex-wrap gap-2 text-xs">
-          {[
-            { value: "all", label: "すべて" },
-            { value: "self", label: "自分で登録" },
-            { value: "ai_suggest", label: "AI提案" },
-          ].map((f) => (
+          {filterChips.map((f) => (
             <button
               key={f.value}
-              onClick={() => setFilter(f.value as SourceFilter)}
+              onClick={() => setFilter(f.value)}
               className={`px-3 py-1 rounded-full border transition-colors ${
                 filter === f.value
                   ? "bg-primary text-white border-primary"
@@ -276,42 +270,34 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
           ))}
         </div>
 
-        <Tabs defaultValue="untried">
-          <TabsList>
-            <TabsTrigger value="untried" className="gap-1.5">
-              これから作る
-              {untried.length > 0 && (
-                <Badge variant="secondary" className="ml-1 text-xs">
-                  {untried.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="tried" className="gap-1.5">
-              作ったことある
-              {tried.length > 0 && (
-                <Badge variant="secondary" className="ml-1 text-xs">
-                  {tried.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="untried" className="mt-4">
-            {recipes.length === 0 ? (
-              <EmptyState
-                icon={<UtensilsCrossed className="w-6 h-6" />}
-                title="レシピがまだありません"
-                description="「レシピを追加」から作りましょう"
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={<UtensilsCrossed className="w-6 h-6" />}
+            title={
+              recipes.length === 0
+                ? "レシピがまだありません"
+                : "該当するレシピがありません"
+            }
+            description={
+              recipes.length === 0
+                ? "「レシピを追加」から作りましょう"
+                : ""
+            }
+          />
+        ) : (
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+            {filtered.map((recipe) => (
+              <RecipeCard
+                key={recipe.id}
+                recipe={recipe}
+                onToggleTried={toggleTried}
+                onLog={setLogTarget}
+                onDelete={deleteRecipe}
+                onDuplicate={duplicateRecipe}
               />
-            ) : (
-              <RecipeGrid items={untried} />
-            )}
-          </TabsContent>
-
-          <TabsContent value="tried" className="mt-4">
-            <RecipeGrid items={tried} />
-          </TabsContent>
-        </Tabs>
+            ))}
+          </div>
+        )}
       </div>
 
       <LogMealDialog
@@ -319,7 +305,7 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
         defaultMealType={defaultMealType}
         onClose={() => setLogTarget(null)}
         onLogged={() => {
-          toast.success("食事を記録しました");
+          toast.success("追加しました");
           setLogTarget(null);
         }}
       />

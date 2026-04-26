@@ -227,6 +227,36 @@ export function RecipeEditor({
             />
           </div>
 
+          {/* 種類タグ */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">種類</label>
+            <div className="flex gap-1.5">
+              {(["self", "ai_suggest", "delivery"] as const).map((tag) => {
+                const active = (draft.source_tag ?? "self") === tag;
+                const label =
+                  tag === "self"
+                    ? "自作"
+                    : tag === "ai_suggest"
+                      ? "AI提案"
+                      : "宅配";
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setField("source_tag", tag)}
+                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                      active
+                        ? "bg-primary text-white border-primary"
+                        : "bg-surface-subtle text-foreground border-border"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* 自動計算/AI生成の値（読み取り専用） */}
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-surface-subtle border border-border rounded-md px-3 py-2">

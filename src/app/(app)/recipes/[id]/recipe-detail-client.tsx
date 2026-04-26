@@ -67,13 +67,16 @@ function RecipeHeroImage({ recipe }: { recipe: Recipe }) {
 }
 
 function StepImage({ query }: { query: string | null }) {
-  const { imageUrl } = useFoodImage(query);
+  const { imageUrl, loading } = useFoodImage(query);
+  if (loading) {
+    return <Skeleton className="w-full aspect-video rounded-md" />;
+  }
   if (!imageUrl) return null;
   return (
     <img
       src={imageUrl}
       alt={query ?? ""}
-      className="w-16 h-16 rounded-md object-cover flex-shrink-0"
+      className="w-full aspect-video object-cover rounded-md"
       loading="lazy"
       decoding="async"
     />
@@ -199,6 +202,16 @@ export function RecipeDetailClient({
       </div>
 
       <div className="px-4 md:px-8 pt-5 pb-8 space-y-6 max-w-4xl">
+        {recipe.source_tag && (
+          <Badge variant="outline" className="self-start">
+            {recipe.source_tag === "self"
+              ? "自作"
+              : recipe.source_tag === "ai_suggest"
+                ? "AI提案"
+                : "宅配"}
+          </Badge>
+        )}
+
         <PageHeader
           title={recipe.title}
           description={recipe.description ?? undefined}
@@ -234,7 +247,7 @@ export function RecipeDetailClient({
                 onClick={() => setLogOpen(true)}
               >
                 <CalendarPlus className="w-3.5 h-3.5" />
-                今日記録する
+                今日に追加
               </Button>
             </div>
           }
@@ -346,14 +359,15 @@ export function RecipeDetailClient({
               </div>
               {needToBuyCount > 0 && (
                 <Button
+                  size="sm"
                   onClick={generateShoppingList}
                   disabled={generating}
-                  className="w-full gap-2"
+                  className="gap-1.5"
                 >
-                  <ShoppingCart className="w-4 h-4" />
+                  <ShoppingCart className="w-3.5 h-3.5" />
                   {generating
                     ? "生成中..."
-                    : `買い物リストを作る（${needToBuyCount}品）`}
+                    : `買い物リストへ（${needToBuyCount}品）`}
                 </Button>
               )}
             </div>
@@ -379,7 +393,7 @@ export function RecipeDetailClient({
               </a>
             }
           >
-            <div className="space-y-2">
+            <div className="space-y-4">
               {steps.map((step) => {
                 const done = completedSteps.has(step.order);
                 return (
@@ -387,31 +401,33 @@ export function RecipeDetailClient({
                     key={step.order}
                     onClick={() => toggleStep(step.order)}
                     className={cn(
-                      "w-full text-left flex gap-4 p-4 rounded-md border transition-colors",
+                      "w-full text-left flex flex-col gap-3 p-4 rounded-lg border transition-colors",
                       done
                         ? "bg-primary/5 border-primary/20"
                         : "bg-card border-border hover:bg-muted",
                     )}
                   >
-                    <div
-                      className={cn(
-                        "w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-semibold",
-                        done
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-surface-subtle text-muted-foreground",
-                      )}
-                    >
-                      {done ? <Check className="w-3.5 h-3.5" /> : step.order}
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={cn(
+                          "w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-semibold",
+                          done
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-primary/10 text-primary",
+                        )}
+                      >
+                        {done ? <Check className="w-4 h-4" /> : step.order}
+                      </div>
+                      <p
+                        className={cn(
+                          "text-base leading-relaxed flex-1 text-left pt-1",
+                          done && "line-through text-muted-foreground",
+                        )}
+                      >
+                        {step.text}
+                      </p>
                     </div>
-                    <p
-                      className={cn(
-                        "text-sm leading-relaxed flex-1 text-left pt-0.5",
-                        done && "line-through text-muted-foreground",
-                      )}
-                    >
-                      {step.text}
-                    </p>
-                    {step.image_query && !done && (
+                    {step.image_query && (
                       <StepImage query={step.image_query} />
                     )}
                   </button>
@@ -427,7 +443,7 @@ export function RecipeDetailClient({
         onClose={() => setLogOpen(false)}
         onLogged={() => {
           setLogOpen(false);
-          toast.success("食事を記録しました");
+          toast.success("今日の食事に追加しました");
         }}
       />
     </div>

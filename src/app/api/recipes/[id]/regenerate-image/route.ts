@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { DB_SCHEMA } from "@/lib/constants";
-import { fetchUnsplashImage } from "@/lib/unsplash";
+import { fetchRecipeImage } from "@/lib/image-query";
 
 export async function POST(
   _request: Request,
@@ -19,15 +19,14 @@ export async function POST(
     const { data: recipe } = await supabase
       .schema(DB_SCHEMA)
       .from("recipes")
-      .select("title, title_en")
+      .select("title, title_en, description, ingredients")
       .eq("id", id)
       .eq("user_id", user.id)
       .single();
     if (!recipe)
       return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const query = recipe.title_en || recipe.title;
-    const imageUrl = await fetchUnsplashImage(query);
+    const imageUrl = await fetchRecipeImage(recipe);
 
     const { error } = await supabase
       .schema(DB_SCHEMA)

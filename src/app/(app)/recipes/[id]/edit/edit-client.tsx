@@ -27,6 +27,7 @@ function recipeToDraft(r: Recipe): DraftRecipe {
     is_meal_prep_friendly: r.is_meal_prep_friendly,
     meal_prep_days: r.meal_prep_days,
     servings: r.servings,
+    source_tag: r.source_tag ?? "self",
     ingredients: (r.ingredients ?? []).map((ing) => ({
       ...ing,
       unit: ing.unit ?? "",
@@ -78,7 +79,7 @@ export function EditRecipeClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           recipe: draft,
-          source_tag: recipe.source_tag ?? "self",
+          source_tag: draft.source_tag ?? recipe.source_tag ?? "self",
         }),
       });
       const data = await res.json();

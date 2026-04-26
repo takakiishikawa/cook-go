@@ -91,8 +91,10 @@ export function PlanClient({
     date: string;
     mealType: MealType;
   } | null>(null);
-  const [selectedRecipeId, setSelectedRecipeId] = useState<string>("");
-  const [servings, setServings] = useState<number>(1);
+  const [selectedRecipeIds, setSelectedRecipeIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [recipeSearch, setRecipeSearch] = useState<string>("");
   const [repeatRule, setRepeatRule] = useState<
     "none" | "daily" | "weekdays" | "custom"
   >("none");
@@ -134,41 +136,55 @@ export function PlanClient({
 
   const openCell = (date: string, mealType: MealType) => {
     setSelectedCell({ date, mealType });
-    setSelectedRecipeId("");
-    setServings(1);
+    setSelectedRecipeIds(new Set());
+    setRecipeSearch("");
     setRepeatRule("none");
     setRepeatUntil("");
     setCustomDays([]);
   };
 
+  const toggleRecipeSelection = (id: string) => {
+    setSelectedRecipeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const saveMapping = async () => {
-    if (!selectedCell || !selectedRecipeId) return;
+    if (!selectedCell || selectedRecipeIds.size === 0) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/plan/map", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipe_id: selectedRecipeId,
-          planned_date: selectedCell.date,
-          meal_type: selectedCell.mealType,
-          servings,
-          repeat_rule: repeatRule,
-          repeat_days: customDays,
-          repeat_until: repeatUntil || null,
-        }),
-      });
-      const data = (await res.json()) as {
-        plans_created: number;
-        error?: string;
-      };
-      if (data.error) throw new Error(data.error);
-      toast.success(`${data.plans_created}日分の献立を登録しました`);
+      const ids = Array.from(selectedRecipeIds);
+      let totalCreated = 0;
+      for (const recipe_id of ids) {
+        const res = await fetch("/api/plan/map", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recipe_id,
+            planned_date: selectedCell.date,
+            meal_type: selectedCell.mealType,
+            servings: 1,
+            repeat_rule: repeatRule,
+            repeat_days: customDays,
+            repeat_until: repeatUntil || null,
+          }),
+        });
+        const data = (await res.json()) as {
+          plans_created: number;
+          error?: string;
+        };
+        if (data.error) throw new Error(data.error);
+        totalCreated += data.plans_created ?? 0;
+      }
+      toast.success(`${totalCreated}件追加しました`);
       setSelectedCell(null);
       await fetchWeek(weekStart);
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : "献立の登録に失敗しました";
+        err instanceof Error ? err.message : "登録に失敗しました";
       toast.error(msg);
     } finally {
       setSaving(false);
@@ -368,41 +384,65 @@ export function PlanClient({
               </p>
             ) : (
               <>
-                <Select
-                  value={selectedRecipeId}
-                  onValueChange={setSelectedRecipeId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="レシピを選択..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {recipes.map((r) => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.title}
-                        {r.protein_g_per_serving &&
-                          ` (P${r.protein_g_per_serving}g)`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">食分:</span>
-                  <Select
-                    value={String(servings)}
-                    onValueChange={(v) => setServings(Number(v))}
-                  >
-                    <SelectTrigger className="w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[0.5, 1, 1.5, 2, 3].map((s) => (
-                        <SelectItem key={s} value={String(s)}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <input
+                  type="text"
+                  value={recipeSearch}
+                  onChange={(e) => setRecipeSearch(e.target.value)}
+                  placeholder="レシピを検索..."
+                  className="w-full text-sm border border-border rounded-md px-3 py-2 bg-background"
+                />
+                <div className="max-h-64 overflow-y-auto space-y-1 -mx-1 px-1">
+                  {recipes
+                    .filter((r) => {
+                      const q = recipeSearch.trim().toLowerCase();
+                      if (!q) return true;
+                      return (
+                        r.title.toLowerCase().includes(q) ||
+                        (r.title_en?.toLowerCase().includes(q) ?? false)
+                      );
+                    })
+                    .map((r) => {
+                      const active = selectedRecipeIds.has(r.id);
+                      return (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() => toggleRecipeSelection(r.id)}
+                          className={`w-full flex items-center gap-2 p-2 rounded-md border text-left transition-colors ${
+                            active
+                              ? "ring-2 ring-primary border-primary bg-primary/5"
+                              : "border-border hover:bg-muted"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={active}
+                            onChange={() => toggleRecipeSelection(r.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          {r.image_url && (
+                            <img
+                              src={r.image_url}
+                              alt=""
+                              className="w-10 h-10 rounded object-cover shrink-0"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {r.title}
+                            </p>
+                            {r.protein_g_per_serving != null && (
+                              <p className="text-xs text-primary">
+                                P{r.protein_g_per_serving}g
+                                {r.calorie_kcal_per_serving
+                                  ? ` ・ ${r.calorie_kcal_per_serving}kcal`
+                                  : ""}
+                              </p>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
                 </div>
 
                 <div className="space-y-2">
@@ -461,6 +501,7 @@ export function PlanClient({
 
                 <div className="flex gap-2 pt-2">
                   <Button
+                    size="sm"
                     variant="outline"
                     className="flex-1"
                     onClick={() => setSelectedCell(null)}
@@ -468,11 +509,14 @@ export function PlanClient({
                     キャンセル
                   </Button>
                   <Button
+                    size="sm"
                     className="flex-1"
                     onClick={saveMapping}
-                    disabled={!selectedRecipeId || saving}
+                    disabled={selectedRecipeIds.size === 0 || saving}
                   >
-                    {saving ? "登録中..." : "登録"}
+                    {saving
+                      ? "追加中..."
+                      : `${selectedRecipeIds.size}件追加`}
                   </Button>
                 </div>
               </>

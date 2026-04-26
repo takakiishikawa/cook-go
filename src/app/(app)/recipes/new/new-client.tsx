@@ -123,7 +123,8 @@ export function NewRecipeClient({
   const saveSingleDraft = async (recipe: DraftRecipe) => {
     setSaving(true);
     try {
-      const source_tag = mode === "ai" ? "ai_suggest" : "self";
+      const source_tag =
+        recipe.source_tag ?? (mode === "ai" ? "ai_suggest" : "self");
       const res = await fetch("/api/recipes/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

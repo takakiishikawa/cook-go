@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { DB_SCHEMA } from "@/lib/constants";
-import { fetchUnsplashImage } from "@/lib/unsplash";
+import { fetchRecipeImage } from "@/lib/image-query";
 import { translateNames } from "@/lib/translate";
 import type {
   RecipeSaveManyRequest,
@@ -75,7 +75,12 @@ export async function POST(request: Request) {
 
     const images = await Promise.all(
       drafts.map((d) =>
-        d.title_en ? fetchUnsplashImage(d.title_en) : Promise.resolve(null),
+        fetchRecipeImage({
+          title: d.title,
+          title_en: d.title_en,
+          description: d.description,
+          ingredients: d.ingredients ?? [],
+        }),
       ),
     );
 
@@ -96,16 +101,18 @@ export async function POST(request: Request) {
           };
         },
       );
+      const hasAnyKcalData = ingredients.some(
+        (i) => typeof i.kcal_kcal === "number",
+      );
       return {
         user_id: user.id,
         title: draft.title,
         title_en: draft.title_en ?? null,
         description: draft.description ?? null,
         protein_g_per_serving: sumProtein(ingredients),
-        calorie_kcal_per_serving:
-          sumKcal(ingredients) > 0
-            ? sumKcal(ingredients)
-            : draft.calorie_kcal_per_serving,
+        calorie_kcal_per_serving: hasAnyKcalData
+          ? sumKcal(ingredients)
+          : draft.calorie_kcal_per_serving,
         prep_time_min: draft.prep_time_min,
         is_meal_prep_friendly: false,
         meal_prep_days: null,

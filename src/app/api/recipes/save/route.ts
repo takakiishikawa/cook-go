@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { DB_SCHEMA } from "@/lib/constants";
-import { fetchUnsplashImage } from "@/lib/unsplash";
+import { fetchRecipeImage } from "@/lib/image-query";
 import { translateNames, translateTitle } from "@/lib/translate";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
@@ -15,19 +15,28 @@ async function enrichIngredients(
   ingredients: RecipeIngredient[],
   pantryNames: Set<string>,
 ): Promise<RecipeIngredient[]> {
-  const needsTranslate = Array.from(
+  // 翻訳または「other / 未指定」カテゴリ補完が必要な食材
+  const needsWork = Array.from(
     new Set(
       ingredients
-        .filter((i) => i.name && (!i.name_en || !i.name_vi))
+        .filter(
+          (i) =>
+            i.name &&
+            (!i.name_en ||
+              !i.name_vi ||
+              !i.category ||
+              i.category === "other"),
+        )
         .map((i) => i.name),
     ),
   );
-  let translations: Record<string, { en?: string; vi?: string }> = {};
-  if (needsTranslate.length > 0) {
-    translations = await translateNames(needsTranslate);
-  }
+  const translations =
+    needsWork.length > 0
+      ? await translateNames(needsWork, { needCategory: true })
+      : {};
   return ingredients.map((ing) => {
     const t = translations[ing.name];
+    const inferredCategory = t?.category && t.category !== "other" ? t.category : null;
     return {
       name: ing.name,
       name_en: ing.name_en ?? t?.en ?? null,
@@ -37,7 +46,10 @@ async function enrichIngredients(
       protein_g: typeof ing.protein_g === "number" ? ing.protein_g : null,
       kcal_kcal: typeof ing.kcal_kcal === "number" ? ing.kcal_kcal : null,
       in_pantry: pantryNames.has((ing.name ?? "").toLowerCase()),
-      category: ing.category ?? null,
+      category:
+        ing.category && ing.category !== "other"
+          ? ing.category
+          : (inferredCategory ?? ing.category ?? "other"),
     };
   });
 }
@@ -68,15 +80,17 @@ async function buildPayload(
     draft.ingredients ?? [],
     pantryNames,
   );
+  const hasAnyKcalData = ingredients.some(
+    (i) => typeof i.kcal_kcal === "number",
+  );
   return {
     title: draft.title,
     title_en: draft.title_en ?? null,
     description: draft.description ?? null,
     protein_g_per_serving: sumProtein(ingredients),
-    calorie_kcal_per_serving:
-      sumKcal(ingredients) > 0
-        ? sumKcal(ingredients)
-        : draft.calorie_kcal_per_serving,
+    calorie_kcal_per_serving: hasAnyKcalData
+      ? sumKcal(ingredients)
+      : draft.calorie_kcal_per_serving,
     prep_time_min: draft.prep_time_min,
     is_meal_prep_friendly: false,
     meal_prep_days: null,
@@ -127,12 +141,21 @@ export async function POST(request: Request) {
       );
 
     const source_tag: RecipeSourceTag =
-      body.source_tag === "ai_suggest" ? "ai_suggest" : "self";
+      body.source_tag === "ai_suggest"
+        ? "ai_suggest"
+        : body.source_tag === "delivery"
+          ? "delivery"
+          : "self";
 
     const pantryNames = await getPantryNames(supabase, user.id);
     const titleEn = await ensureTitleEn(draft);
     const enrichedDraft: DraftRecipe = { ...draft, title_en: titleEn };
-    const imageUrl = titleEn ? await fetchUnsplashImage(titleEn) : null;
+    const imageUrl = await fetchRecipeImage({
+      title: enrichedDraft.title,
+      title_en: enrichedDraft.title_en,
+      description: enrichedDraft.description,
+      ingredients: enrichedDraft.ingredients ?? [],
+    });
 
     const payload = await buildPayload(
       enrichedDraft,
@@ -209,13 +232,23 @@ export async function PUT(request: Request) {
     let imageUrl = existing.image_url as string | null;
     const titleChanged = draft.title.trim() !== (existing.title as string);
     const titleEnChanged = titleEn !== (existing.title_en as string | null);
-    if ((titleChanged || titleEnChanged) && titleEn) {
-      const newImg = await fetchUnsplashImage(titleEn);
+    if (titleChanged || titleEnChanged) {
+      const newImg = await fetchRecipeImage({
+        title: enrichedDraft.title,
+        title_en: enrichedDraft.title_en,
+        description: enrichedDraft.description,
+        ingredients: enrichedDraft.ingredients ?? [],
+      });
       if (newImg) imageUrl = newImg;
     }
 
+    const requested = body.source_tag;
     const source_tag: RecipeSourceTag =
-      (existing.source_tag as RecipeSourceTag | null) ?? "self";
+      requested === "self" ||
+      requested === "ai_suggest" ||
+      requested === "delivery"
+        ? requested
+        : ((existing.source_tag as RecipeSourceTag | null) ?? "self");
 
     const payload = await buildPayload(
       enrichedDraft,

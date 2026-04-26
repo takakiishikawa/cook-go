@@ -49,7 +49,6 @@ export function LogMealDialog({
 }: LogMealDialogProps) {
   const [mealType, setMealType] = useState<MealType>(defaultMealType);
   const [date, setDate] = useState<string>(defaultDate ?? todayStr());
-  const [servings, setServings] = useState<number>(1);
   const [showDetails, setShowDetails] = useState(false);
   const [amounts, setAmounts] = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -58,7 +57,6 @@ export function LogMealDialog({
     if (!recipe) return;
     setMealType(defaultMealType);
     setDate(defaultDate ?? todayStr());
-    setServings(1);
     setShowDetails(false);
     const initial: Record<number, string> = {};
     (recipe.ingredients ?? []).forEach((ing, i) => {
@@ -91,18 +89,14 @@ export function LogMealDialog({
 
   const previewProteinG = useMemo(() => {
     if (!recipe?.ingredients?.length) {
-      return recipe?.protein_g_per_serving
-        ? Math.round(recipe.protein_g_per_serving * servings * 10) / 10
-        : null;
+      return recipe?.protein_g_per_serving ?? null;
     }
     const baseTotal = recipe.ingredients.reduce(
       (s, i) => s + (typeof i.protein_g === "number" ? i.protein_g : 0),
       0,
     );
     if (baseTotal === 0) {
-      return recipe.protein_g_per_serving
-        ? Math.round(recipe.protein_g_per_serving * servings * 10) / 10
-        : null;
+      return recipe.protein_g_per_serving ?? null;
     }
     const overrideMap = new Map<number, FoodLogIngredientOverride>();
     overrides.forEach((o) => overrideMap.set(o.index, o));
@@ -116,10 +110,8 @@ export function LogMealDialog({
             : 0;
       return s + protein;
     }, 0);
-    const proteinPerServing =
-      (overriddenTotal / baseTotal) * (recipe.protein_g_per_serving ?? 0);
-    return Math.round(proteinPerServing * servings * 10) / 10;
-  }, [recipe, overrides, servings]);
+    return Math.round(overriddenTotal * 10) / 10;
+  }, [recipe, overrides]);
 
   const submit = async () => {
     if (!recipe) return;
@@ -129,8 +121,9 @@ export function LogMealDialog({
         recipe_id: recipe.id,
         logged_date: date,
         meal_type: mealType,
-        servings,
-        overrides: overrides.length > 0 ? { ingredients: overrides } : null,
+        servings: 1,
+        overrides:
+          overrides.length > 0 ? { ingredients: overrides } : null,
       };
       const res = await fetch("/api/food-logs", {
         method: "POST",
@@ -164,7 +157,7 @@ export function LogMealDialog({
     >
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>食事を記録</DialogTitle>
+          <DialogTitle>食事を追加</DialogTitle>
           {recipe && <DialogDescription>{recipe.title}</DialogDescription>}
         </DialogHeader>
 
@@ -199,46 +192,16 @@ export function LogMealDialog({
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">食分</label>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={() => setServings((s) => Math.max(0.5, s - 0.5))}
-                >
-                  <Minus className="w-3 h-3" />
-                </Button>
-                <Input
-                  type="number"
-                  step="0.5"
-                  value={String(servings)}
-                  onChange={(e) =>
-                    setServings(Math.max(0.5, Number(e.target.value) || 1))
-                  }
-                  className="text-center"
-                />
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={() => setServings((s) => s + 0.5)}
-                >
-                  <Plus className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
-
             {previewProteinG != null && (
               <div className="text-sm bg-primary/5 border border-primary/20 rounded-md px-3 py-2">
-                <span className="text-muted-foreground">予想タンパク質: </span>
+                <span className="text-muted-foreground">タンパク質: </span>
                 <span className="font-semibold text-primary">
                   {previewProteinG}g
                 </span>
               </div>
             )}
 
-            {(recipe.ingredients?.some((i) => (i.unit ?? "") === "g") ??
-              false) && (
+            {(recipe.ingredients?.some((i) => (i.unit ?? "") === "g") ?? false) && (
               <div>
                 <button
                   type="button"
@@ -293,6 +256,7 @@ export function LogMealDialog({
 
             <div className="flex gap-2 pt-2">
               <Button
+                size="sm"
                 variant="outline"
                 className="flex-1"
                 onClick={onClose}
@@ -301,6 +265,7 @@ export function LogMealDialog({
                 キャンセル
               </Button>
               <Button
+                size="sm"
                 className="flex-1 gap-1.5"
                 onClick={submit}
                 disabled={submitting}
@@ -308,7 +273,7 @@ export function LogMealDialog({
                 {submitting && (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 )}
-                {submitting ? "記録中..." : "記録する"}
+                {submitting ? "追加中..." : "追加"}
               </Button>
             </div>
           </div>

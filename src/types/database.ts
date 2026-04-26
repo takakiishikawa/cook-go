@@ -2,6 +2,7 @@ export interface UserSettings {
   id: string;
   user_id: string;
   protein_target_g: number;
+  calorie_target_kcal: number | null;
   weight_kg: number | null;
   created_at: string;
 }
@@ -24,7 +25,13 @@ export interface RecipeStep {
   image_query: string | null;
 }
 
-export type RecipeSourceTag = "self" | "ai_suggest";
+export type RecipeSourceTag = "self" | "ai_suggest" | "delivery";
+
+export const RECIPE_SOURCE_LABELS: Record<RecipeSourceTag, string> = {
+  self: "自作",
+  ai_suggest: "AI提案",
+  delivery: "宅配",
+};
 
 export interface Recipe {
   id: string;
