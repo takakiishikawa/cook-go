@@ -3,12 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { DB_SCHEMA } from "@/lib/constants";
 import { DashboardClient } from "./dashboard-client";
-import {
-  MEAL_TYPES,
-  type FoodLogWithRecipe,
-  type MealPlanWithRecipe,
-  type MealType,
-} from "@/types/database";
+import { type MealPlanWithRecipe } from "@/types/database";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -47,38 +42,20 @@ export default async function DashboardPage() {
     return (data ?? []) as unknown as MealPlanWithRecipe[];
   };
 
-  const [
-    settings,
-    todayLogs,
-    twoWeekLogs,
-    todayPlans,
-    twoWeekPlans,
-    recipes,
-    ...recentArrays
-  ] = await Promise.all([
-    db.settings.get(supabase, user.id),
-    db.foodLogs.getByDate(supabase, user.id, todayStr),
-    db.foodLogs.getByDateRange(
-      supabase,
-      user.id,
-      fourteenDaysAgoStr,
-      todayStr,
-    ),
-    fetchPlansByDate(todayStr),
-    fetchPlansRange(fourteenDaysAgoStr, todayStr),
-    db.recipes.getAll(supabase, user.id, 200),
-    ...MEAL_TYPES.map((mt) =>
-      db.foodLogs.getRecentByMealType(supabase, user.id, mt, 3),
-    ),
-  ]);
-
-  const recentByMealType = MEAL_TYPES.reduce(
-    (acc, mt, i) => {
-      acc[mt] = recentArrays[i] as FoodLogWithRecipe[];
-      return acc;
-    },
-    {} as Record<MealType, FoodLogWithRecipe[]>,
-  );
+  const [settings, todayLogs, twoWeekLogs, todayPlans, twoWeekPlans, recipes] =
+    await Promise.all([
+      db.settings.get(supabase, user.id),
+      db.foodLogs.getByDate(supabase, user.id, todayStr),
+      db.foodLogs.getByDateRange(
+        supabase,
+        user.id,
+        fourteenDaysAgoStr,
+        todayStr,
+      ),
+      fetchPlansByDate(todayStr),
+      fetchPlansRange(fourteenDaysAgoStr, todayStr),
+      db.recipes.getAll(supabase, user.id, 200),
+    ]);
 
   return (
     <DashboardClient
@@ -89,7 +66,6 @@ export default async function DashboardPage() {
       initialDatePlans={todayPlans}
       twoWeekLogs={twoWeekLogs}
       twoWeekPlans={twoWeekPlans}
-      recentByMealType={recentByMealType}
       recipes={recipes}
     />
   );

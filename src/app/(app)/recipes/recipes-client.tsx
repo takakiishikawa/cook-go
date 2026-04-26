@@ -26,7 +26,6 @@ import {
   Recipe,
   MealType,
   RECIPE_SOURCE_LABELS,
-  type RecipeSourceTag,
 } from "@/types/database";
 import { useFoodImage } from "@/hooks/use-food-image";
 import { createClient } from "@/lib/supabase/client";
@@ -170,20 +169,12 @@ interface RecipesClientProps {
   recipes: Recipe[];
 }
 
-type SourceFilter = "all" | RecipeSourceTag;
-
 export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
   const router = useRouter();
   const supabase = createClient();
   const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
-  const [filter, setFilter] = useState<SourceFilter>("all");
   const [logTarget, setLogTarget] = useState<Recipe | null>(null);
   const [defaultMealType] = useState<MealType>("dinner");
-
-  const filtered = recipes.filter((r) => {
-    if (filter === "all") return true;
-    return r.source_tag === filter;
-  });
 
   const deleteRecipe = async (recipe: Recipe) => {
     setRecipes((prev) => prev.filter((r) => r.id !== recipe.id));
@@ -227,13 +218,6 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
     );
   };
 
-  const filterChips: Array<{ value: SourceFilter; label: string }> = [
-    { value: "all", label: "すべて" },
-    { value: "self", label: "自作" },
-    { value: "ai_suggest", label: "AI提案" },
-    { value: "delivery", label: "宅配" },
-  ];
-
   return (
     <div className="flex flex-col">
       <AppHeader />
@@ -254,39 +238,15 @@ export function RecipesClient({ recipes: initialRecipes }: RecipesClientProps) {
           }
         />
 
-        <div className="flex flex-wrap gap-2 text-xs">
-          {filterChips.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
-              className={`px-3 py-1 rounded-full border transition-colors ${
-                filter === f.value
-                  ? "bg-primary text-white border-primary"
-                  : "bg-surface-subtle text-foreground border-border"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {filtered.length === 0 ? (
+        {recipes.length === 0 ? (
           <EmptyState
             icon={<UtensilsCrossed className="w-6 h-6" />}
-            title={
-              recipes.length === 0
-                ? "レシピがまだありません"
-                : "該当するレシピがありません"
-            }
-            description={
-              recipes.length === 0
-                ? "「レシピを追加」から作りましょう"
-                : ""
-            }
+            title="レシピがまだありません"
+            description="「レシピを追加」から作りましょう"
           />
         ) : (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-            {filtered.map((recipe) => (
+            {recipes.map((recipe) => (
               <RecipeCard
                 key={recipe.id}
                 recipe={recipe}
