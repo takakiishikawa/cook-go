@@ -22,11 +22,7 @@ import {
   toast,
 } from "@takaki/go-design-system";
 import { AppHeader } from "@/components/layout/app-header";
-import {
-  Recipe,
-  MealType,
-  RECIPE_SOURCE_LABELS,
-} from "@/types/database";
+import { Recipe, MealType, RECIPE_SOURCE_LABELS } from "@/types/database";
 import { useFoodImage } from "@/hooks/use-food-image";
 import { createClient } from "@/lib/supabase/client";
 import { db } from "@/lib/db";

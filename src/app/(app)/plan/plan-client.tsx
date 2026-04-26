@@ -183,8 +183,7 @@ export function PlanClient({
       setSelectedCell(null);
       await fetchWeek(weekStart);
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "登録に失敗しました";
+      const msg = err instanceof Error ? err.message : "登録に失敗しました";
       toast.error(msg);
     } finally {
       setSaving(false);
@@ -514,9 +513,7 @@ export function PlanClient({
                     onClick={saveMapping}
                     disabled={selectedRecipeIds.size === 0 || saving}
                   >
-                    {saving
-                      ? "追加中..."
-                      : `${selectedRecipeIds.size}件追加`}
+                    {saving ? "追加中..." : `${selectedRecipeIds.size}件追加`}
                   </Button>
                 </div>
               </>

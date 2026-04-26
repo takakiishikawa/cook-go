@@ -122,8 +122,7 @@ export function LogMealDialog({
         logged_date: date,
         meal_type: mealType,
         servings: 1,
-        overrides:
-          overrides.length > 0 ? { ingredients: overrides } : null,
+        overrides: overrides.length > 0 ? { ingredients: overrides } : null,
       };
       const res = await fetch("/api/food-logs", {
         method: "POST",
@@ -201,7 +200,8 @@ export function LogMealDialog({
               </div>
             )}
 
-            {(recipe.ingredients?.some((i) => (i.unit ?? "") === "g") ?? false) && (
+            {(recipe.ingredients?.some((i) => (i.unit ?? "") === "g") ??
+              false) && (
               <div>
                 <button
                   type="button"
