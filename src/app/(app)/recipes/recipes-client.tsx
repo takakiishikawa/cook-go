@@ -40,12 +40,15 @@ import { useFoodImage } from "@/hooks/use-food-image";
 import { createClient } from "@/lib/supabase/client";
 import { db } from "@/lib/db";
 
-function RecipeImage({ title }: { title: string }) {
-  const query = title.split(/[のとでや]/)[0].trim() || title;
-  const { imageUrl, loading, error } = useFoodImage(query);
+function RecipeImage({ recipe }: { recipe: Recipe }) {
+  const query = recipe.title_en ?? recipe.title;
+  const { imageUrl, loading, error } = useFoodImage(
+    recipe.image_url ? null : query,
+  );
+  const src = recipe.image_url ?? imageUrl;
 
-  if (loading) return <Skeleton className="w-full h-40" />;
-  if (!imageUrl || error) {
+  if (!recipe.image_url && loading) return <Skeleton className="w-full h-40" />;
+  if (!src || error) {
     return (
       <div className="w-full h-40 bg-surface-subtle flex items-center justify-center">
         <UtensilsCrossed
@@ -57,8 +60,8 @@ function RecipeImage({ title }: { title: string }) {
   }
   return (
     <img
-      src={imageUrl}
-      alt={title}
+      src={src}
+      alt={recipe.title}
       className="w-full h-40 object-cover bg-muted"
       loading="lazy"
       decoding="async"
@@ -78,7 +81,7 @@ function RecipeCard({
       <Link href={`/recipes/${recipe.id}`}>
         <Card className="overflow-hidden hover:border border-border transition-shadow h-full flex flex-col">
           <div className="overflow-hidden">
-            <RecipeImage title={recipe.title} />
+            <RecipeImage recipe={recipe} />
           </div>
           <CardContent className="p-3 space-y-2 flex-1 flex flex-col">
             <p className="font-semibold text-foreground text-sm line-clamp-2 leading-snug flex-1">

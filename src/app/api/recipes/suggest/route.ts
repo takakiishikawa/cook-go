@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { DB_SCHEMA, CLAUDE_SONNET } from "@/lib/constants";
+import { fetchUnsplashImage } from "@/lib/unsplash";
 import type {
   SuggestedRecipe,
   RecipeSuggestClaudeResponse,
@@ -9,24 +10,6 @@ import type {
 } from "@/types/api";
 
 const client = new Anthropic();
-
-async function fetchUnsplashImage(query: string): Promise<string | null> {
-  const key = process.env.UNSPLASH_ACCESS_KEY;
-  if (!key) return null;
-  try {
-    const res = await fetch(
-      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`,
-      { headers: { Authorization: `Client-ID ${key}` } },
-    );
-    if (!res.ok) return null;
-    const data = (await res.json()) as {
-      results?: Array<{ urls?: { regular?: string } }>;
-    };
-    return data.results?.[0]?.urls?.regular ?? null;
-  } catch {
-    return null;
-  }
-}
 
 export async function POST(request: Request) {
   try {

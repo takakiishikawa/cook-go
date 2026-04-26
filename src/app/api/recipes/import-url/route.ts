@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { DB_SCHEMA, CLAUDE_SONNET } from "@/lib/constants";
+import { fetchUnsplashImage } from "@/lib/unsplash";
 import type {
   SuggestedRecipe,
   RecipeImportClaudeResponse,
@@ -182,6 +183,8 @@ ${text}
       (pantryData ?? []).map((p) => p.name.toLowerCase()),
     );
 
+    const imageUrl = r.title_en ? await fetchUnsplashImage(r.title_en) : null;
+
     const insert = {
       user_id: user.id,
       title: r.title,
@@ -200,6 +203,7 @@ ${text}
       steps: r.steps,
       ai_generated: true,
       is_tried: false,
+      image_url: imageUrl,
     };
 
     const { data: saved, error } = await supabase
