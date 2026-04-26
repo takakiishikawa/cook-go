@@ -1,18 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_JP } from "next/font/google";
 import { DesignTokens, Toaster } from "@takaki/go-design-system";
-import dynamic from "next/dynamic";
+import { Analytics } from "@vercel/analytics/react";
 import { DarkModeInit } from "@/components/dark-mode-init";
+import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
-
-const Analytics = dynamic(
-  () => import("@vercel/analytics/react").then((m) => m.Analytics),
-  { ssr: false },
-);
-const PwaRegister = dynamic(
-  () => import("@/components/pwa-register").then((m) => m.PwaRegister),
-  { ssr: false },
-);
 
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
