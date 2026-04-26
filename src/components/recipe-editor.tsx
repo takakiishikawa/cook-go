@@ -229,9 +229,7 @@ export function RecipeEditor({
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             <div className="bg-surface-subtle border border-border rounded-md px-3 py-2">
               <p className="text-xs text-muted-foreground">食分</p>
-              <p className="text-sm font-semibold">
-                {draft.servings ?? 1}食分
-              </p>
+              <p className="text-sm font-semibold">{draft.servings ?? 1}食分</p>
             </div>
             <div className="bg-surface-subtle border border-border rounded-md px-3 py-2">
               <p className="text-xs text-muted-foreground">調理時間</p>

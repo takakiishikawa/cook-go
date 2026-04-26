@@ -358,8 +358,7 @@ export function PlanClient({
           <div className="space-y-4">
             {existingPlans.length > 0 && (
               <div className="text-xs text-muted-foreground bg-surface-subtle rounded-md px-3 py-2 space-y-0.5">
-                現在:{" "}
-                {existingPlans.map((p) => p.recipe.title).join(", ")}
+                現在: {existingPlans.map((p) => p.recipe.title).join(", ")}
               </div>
             )}
 

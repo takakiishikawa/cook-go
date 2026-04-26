@@ -199,10 +199,7 @@ export async function GET(request: Request) {
     );
   } catch (error) {
     console.error("food-logs GET error:", error);
-    return NextResponse.json(
-      { error: "取得に失敗しました" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "取得に失敗しました" }, { status: 500 });
   }
 }
 
@@ -231,9 +228,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("food-logs DELETE error:", error);
-    return NextResponse.json(
-      { error: "削除に失敗しました" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "削除に失敗しました" }, { status: 500 });
   }
 }

@@ -65,7 +65,8 @@ export function DashboardClient({
   recipes,
 }: Props) {
   const [date, setDate] = useState(initialDate);
-  const [dateLogs, setDateLogs] = useState<FoodLogWithRecipe[]>(initialDateLogs);
+  const [dateLogs, setDateLogs] =
+    useState<FoodLogWithRecipe[]>(initialDateLogs);
   const [allLogs, setAllLogs] = useState<FoodLogWithRecipe[]>(twoWeekLogs);
   const [recent, setRecent] =
     useState<Record<MealType, FoodLogWithRecipe[]>>(recentByMealType);
@@ -285,7 +286,10 @@ export function DashboardClient({
                 <span className="text-2xl font-bold text-primary">
                   {Math.round(totalProteinToday)}
                 </span>
-                <span className="text-muted-foreground"> / {proteinTarget}g</span>
+                <span className="text-muted-foreground">
+                  {" "}
+                  / {proteinTarget}g
+                </span>
               </span>
             </div>
             <div className="h-2 bg-surface-subtle rounded-full overflow-hidden">

@@ -60,9 +60,7 @@ export async function POST(request: Request) {
           name: ing.name,
           name_en: ing.name_en ?? null,
           name_vi: ing.name_vi ?? null,
-          amount: ing.unit
-            ? `${ing.amount}${ing.unit}`
-            : (ing.amount ?? null),
+          amount: ing.unit ? `${ing.amount}${ing.unit}` : (ing.amount ?? null),
           checked: false,
         })),
       )

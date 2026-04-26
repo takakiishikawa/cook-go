@@ -105,12 +105,7 @@ export const MEAL_TYPE_LABELS: Record<MealType, string> = {
   snack: "間食",
 };
 
-export const MEAL_TYPES: MealType[] = [
-  "breakfast",
-  "lunch",
-  "dinner",
-  "snack",
-];
+export const MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
 export interface FoodLogIngredientOverride {
   index: number;

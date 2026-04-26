@@ -24,10 +24,7 @@ export async function GET(request: Request) {
     const mealType = url.searchParams.get("meal_type") as MealType | null;
     const limitStr = url.searchParams.get("limit");
     if (!mealType || !ALLOWED_MEAL_TYPES.has(mealType))
-      return NextResponse.json(
-        { error: "meal_type が不正" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "meal_type が不正" }, { status: 400 });
     const limit = Math.min(Math.max(Number(limitStr) || 3, 1), 20);
 
     const logs = await db.foodLogs.getRecentByMealType(
@@ -39,9 +36,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ logs } satisfies FoodLogsRecentResponse);
   } catch (error) {
     console.error("food-logs/recent error:", error);
-    return NextResponse.json(
-      { error: "取得に失敗しました" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "取得に失敗しました" }, { status: 500 });
   }
 }

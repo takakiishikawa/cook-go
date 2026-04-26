@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, RefreshCw, Sparkles, PencilLine, Clock } from "lucide-react";
+import {
+  ArrowLeft,
+  RefreshCw,
+  Sparkles,
+  PencilLine,
+  Clock,
+} from "lucide-react";
 import {
   Button,
   Input,
@@ -314,9 +320,7 @@ export function NewRecipeClient({
                 disabled={saving || selected.size === 0}
               >
                 {saving && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                {saving
-                  ? "保存中..."
-                  : `${selected.size}件を登録`}
+                {saving ? "保存中..." : `${selected.size}件を登録`}
               </Button>
             </div>
           </div>

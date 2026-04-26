@@ -205,12 +205,7 @@ export function RecipeDetailClient({
           description={recipe.description ?? undefined}
           actions={
             <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5"
-                asChild
-              >
+              <Button size="sm" variant="outline" className="gap-1.5" asChild>
                 <Link href={`/recipes/${recipe.id}/edit`}>
                   <Pencil className="w-3.5 h-3.5" />
                   編集
