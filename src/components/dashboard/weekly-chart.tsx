@@ -23,7 +23,11 @@ function fmtDate(dateStr: string): string {
   return `${d.getMonth() + 1}/${d.getDate()}(${dow})`;
 }
 
-export function WeeklyChart({ data, proteinTarget, calorieTarget }: WeeklyChartProps) {
+export function WeeklyChart({
+  data,
+  proteinTarget,
+  calorieTarget,
+}: WeeklyChartProps) {
   const chartData = data.map((d) => ({ ...d, label: fmtDate(d.date) }));
 
   return (
@@ -31,26 +35,50 @@ export function WeeklyChart({ data, proteinTarget, calorieTarget }: WeeklyChartP
       <div className="h-[200px] w-full">
         <p className="text-xs text-muted-foreground mb-1">タンパク質 (g)</p>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+          <BarChart
+            data={chartData}
+            margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} />
             <YAxis tick={{ fontSize: 10 }} tickLine={false} width={28} />
             <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-            <ReferenceLine y={proteinTarget} stroke="#16a34a" strokeDasharray="4 2" />
-            <Bar dataKey="protein_g" name="タンパク質(g)" fill="#16a34a" radius={[2, 2, 0, 0]} />
+            <ReferenceLine
+              y={proteinTarget}
+              stroke="#16a34a"
+              strokeDasharray="4 2"
+            />
+            <Bar
+              dataKey="protein_g"
+              name="タンパク質(g)"
+              fill="#16a34a"
+              radius={[2, 2, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
       <div className="h-[200px] w-full">
         <p className="text-xs text-muted-foreground mb-1">カロリー (kcal)</p>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+          <BarChart
+            data={chartData}
+            margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} />
             <YAxis tick={{ fontSize: 10 }} tickLine={false} width={36} />
             <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-            <ReferenceLine y={calorieTarget} stroke="#f59e0b" strokeDasharray="4 2" />
-            <Bar dataKey="kcal" name="カロリー(kcal)" fill="#f59e0b" radius={[2, 2, 0, 0]} />
+            <ReferenceLine
+              y={calorieTarget}
+              stroke="#f59e0b"
+              strokeDasharray="4 2"
+            />
+            <Bar
+              dataKey="kcal"
+              name="カロリー(kcal)"
+              fill="#f59e0b"
+              radius={[2, 2, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
