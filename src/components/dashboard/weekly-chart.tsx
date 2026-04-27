@@ -1,120 +1,57 @@
 "use client";
 
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
 
-export interface WeeklyDataPoint {
-  date: string;
-  [key: string]: string | number | null | undefined;
-}
-
-export interface ProductSeries {
-  id: string;
-  name: string;
-  color: string;
-}
-
 export interface WeeklyChartProps {
-  deployData: WeeklyDataPoint[];
-  scoreData: WeeklyDataPoint[];
-  products: ProductSeries[];
+  data: { date: string; protein_g: number; kcal: number }[];
+  proteinTarget: number;
+  calorieTarget: number;
 }
 
-export function WeeklyChart({ deployData, scoreData, products }: WeeklyChartProps) {
-  const noData = deployData.length === 0 && scoreData.length === 0;
-  if (noData) {
-    return (
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="flex h-[232px] items-center justify-center text-sm text-muted-foreground">
-          データがまだありません
-        </div>
-        <div className="flex h-[232px] items-center justify-center text-sm text-muted-foreground">
-          データがまだありません
-        </div>
-      </div>
-    );
-  }
+function fmtDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const dow = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
+  return `${d.getMonth() + 1}/${d.getDate()}(${dow})`;
+}
+
+export function WeeklyChart({ data, proteinTarget, calorieTarget }: WeeklyChartProps) {
+  const chartData = data.map((d) => ({ ...d, label: fmtDate(d.date) }));
+
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <div className="h-[232px] w-full">
+      <div className="h-[200px] w-full">
+        <p className="text-xs text-muted-foreground mb-1">タンパク質 (g)</p>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={deployData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+          <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 11, fill: "var(--color-text-secondary)" }}
-              tickLine={false}
-              axisLine={{ stroke: "var(--color-border)" }}
-            />
-            <YAxis
-              tick={{ fontSize: 11, fill: "var(--color-text-secondary)" }}
-              tickLine={false}
-              axisLine={{ stroke: "var(--color-border)" }}
-              width={32}
-              allowDecimals={false}
-            />
-            <Tooltip
-              contentStyle={{
-                fontSize: 12,
-                borderRadius: 8,
-                border: "1px solid var(--color-border)",
-              }}
-            />
-            <Legend wrapperStyle={{ fontSize: 11, paddingTop: 4 }} iconType="circle" />
-            {products.map((p) => (
-              <Bar key={p.id} dataKey={p.id} name={p.name} fill={p.color} stackId="a" />
-            ))}
+            <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} />
+            <YAxis tick={{ fontSize: 10 }} tickLine={false} width={28} />
+            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+            <ReferenceLine y={proteinTarget} stroke="#16a34a" strokeDasharray="4 2" />
+            <Bar dataKey="protein_g" name="タンパク質(g)" fill="#16a34a" radius={[2, 2, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div className="h-[232px] w-full">
+      <div className="h-[200px] w-full">
+        <p className="text-xs text-muted-foreground mb-1">カロリー (kcal)</p>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={scoreData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+          <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 11, fill: "var(--color-text-secondary)" }}
-              tickLine={false}
-              axisLine={{ stroke: "var(--color-border)" }}
-            />
-            <YAxis
-              domain={[0, 100]}
-              tick={{ fontSize: 11, fill: "var(--color-text-secondary)" }}
-              tickLine={false}
-              axisLine={{ stroke: "var(--color-border)" }}
-              width={32}
-            />
-            <Tooltip
-              contentStyle={{
-                fontSize: 12,
-                borderRadius: 8,
-                border: "1px solid var(--color-border)",
-              }}
-            />
-            <Legend wrapperStyle={{ fontSize: 11, paddingTop: 4 }} iconType="circle" />
-            {products.map((p) => (
-              <Line
-                key={p.id}
-                type="monotone"
-                dataKey={p.id}
-                name={p.name}
-                stroke={p.color}
-                strokeWidth={1.8}
-                dot={false}
-                connectNulls
-              />
-            ))}
-          </LineChart>
+            <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} />
+            <YAxis tick={{ fontSize: 10 }} tickLine={false} width={36} />
+            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+            <ReferenceLine y={calorieTarget} stroke="#f59e0b" strokeDasharray="4 2" />
+            <Bar dataKey="kcal" name="カロリー(kcal)" fill="#f59e0b" radius={[2, 2, 0, 0]} />
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>
