@@ -7,7 +7,10 @@ export interface WeeklyChartProps {
 }
 
 export const WeeklyChart = dynamic<WeeklyChartProps>(
-  () => import("./weekly-chart-inner").then((m) => ({ default: m.WeeklyChartInner })),
+  () =>
+    import("./weekly-chart-inner").then((m) => ({
+      default: m.WeeklyChartInner,
+    })),
   {
     ssr: false,
     loading: () => (
@@ -16,5 +19,5 @@ export const WeeklyChart = dynamic<WeeklyChartProps>(
         <div className="h-[200px] rounded bg-muted animate-pulse" />
       </div>
     ),
-  }
+  },
 );
