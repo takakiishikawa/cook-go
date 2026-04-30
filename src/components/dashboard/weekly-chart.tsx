@@ -24,7 +24,7 @@ const WeeklyChartInner = dynamic(
         ))}
       </div>
     ),
-  }
+  },
 );
 
 export function WeeklyChart(props: WeeklyChartProps) {
