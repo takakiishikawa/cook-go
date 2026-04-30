@@ -53,7 +53,10 @@ export function WeeklyChart({
     <div className="grid gap-4 md:grid-cols-2">
       <div className="h-[200px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+          <BarChart
+            data={data}
+            margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis dataKey="date" {...axisProps} />
             <YAxis {...axisProps} />
@@ -63,13 +66,21 @@ export function WeeklyChart({
               stroke="#0052CC"
               strokeDasharray="4 2"
             />
-            <Bar dataKey="protein_g" name="タンパク質 (g)" fill="#0052CC" radius={[3, 3, 0, 0]} />
+            <Bar
+              dataKey="protein_g"
+              name="タンパク質 (g)"
+              fill="#0052CC"
+              radius={[3, 3, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
       <div className="h-[200px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+          <BarChart
+            data={data}
+            margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis dataKey="date" {...axisProps} />
             <YAxis {...axisProps} />
@@ -79,7 +90,12 @@ export function WeeklyChart({
               stroke="#FF5630"
               strokeDasharray="4 2"
             />
-            <Bar dataKey="kcal" name="カロリー (kcal)" fill="#FF5630" radius={[3, 3, 0, 0]} />
+            <Bar
+              dataKey="kcal"
+              name="カロリー (kcal)"
+              fill="#FF5630"
+              radius={[3, 3, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
